@@ -1,4 +1,66 @@
 // ========================================
+// MULTI-TENANT CONFIG
+// ========================================
+
+// CLINIC_PATH se setea al login según la clínica activa
+// Ejemplo: 'clinica-smith', 'clinica-garcia', etc.
+let CLINIC_PATH = null;
+let unsubscribeSnapshot = null;
+
+// Detectar clínica desde URL o localStorage
+function detectClinica() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlClinica = urlParams.get('clinica');
+    if (urlClinica) {
+        CLINIC_PATH = urlClinica;
+        localStorage.setItem('smile_clinica', urlClinica);
+        return urlClinica;
+    }
+    const saved = localStorage.getItem('smile_clinica');
+    if (saved) {
+        CLINIC_PATH = saved;
+        return saved;
+    }
+    return null;
+}
+
+// Inicializar listener en tiempo real para la clínica activa
+function initRealtimeListener() {
+    if (unsubscribeSnapshot) unsubscribeSnapshot();
+
+    unsubscribeSnapshot = db.collection('clinicas').doc(CLINIC_PATH).onSnapshot((doc) => {
+        if (doc.exists && !doc.metadata.hasPendingWrites) {
+            const data = doc.data();
+            appData.facturas = data.facturas || [];
+            appData.personal = data.personal || getDefaultPersonal();
+            appData.gastos = data.gastos || [];
+            appData.avances = data.avances || [];
+            appData.cuadresDiarios = data.cuadresDiarios || {};
+            appData.pacientes = data.pacientes || [];
+            appData.citas = data.citas || [];
+            appData.laboratorios = data.laboratorios || [];
+            appData.reversiones = data.reversiones || [];
+            appData.auditLogs = data.auditLogs || [];
+            updateLocalCache();
+            if (appData.currentUser) {
+                const activeTab = document.querySelector('.tab-content.active');
+                if (activeTab) {
+                    const tabId = activeTab.id.replace('tab-', '');
+                    if (tabId === 'ingresos') updateIngresosTab();
+                    if (tabId === 'cobrar') updateCobrarTab();
+                    if (tabId === 'cuadre') updateCuadreTab();
+                    if (tabId === 'gastos') updateGastosTab();
+                    if (tabId === 'personal') updatePersonalTab();
+                    if (tabId === 'laboratorio') updateLaboratorioTab();
+                    if (tabId === 'agenda') updateAgendaTab();
+                    if (tabId === 'pacientes') updatePacientesTab();
+                }
+            }
+        }
+    });
+}
+
+// ========================================
 // FIREBASE DATA MANAGEMENT
 // ========================================
 
@@ -30,7 +92,7 @@ async function loadData() {
         }
 
         console.log('☁️ Cargando desde Firebase...');
-        const doc = await db.collection('clinicaData-dev').doc('main').get();
+        const doc = await db.collection('clinicas').doc(CLINIC_PATH).get();
 
         if (doc.exists) {
             const data = doc.data();
@@ -47,7 +109,7 @@ async function loadData() {
             // Cargar pacientes desde subcollection si aplica
             if (data.usaSubcollectionPacientes) {
                 console.log('📂 Cargando pacientes desde subcollection...');
-                const pacientesSnapshot = await db.collection('clinicaData-dev').doc('main')
+                const pacientesSnapshot = await db.collection('clinicas').doc(CLINIC_PATH)
                     .collection('pacientes').get();
                 appData.pacientes = pacientesSnapshot.docs.map(doc => doc.data());
                 console.log(`✅ ${appData.pacientes.length} pacientes cargados desde subcollection`);
@@ -109,68 +171,91 @@ function updateLocalCache() {
     }
 }
 
-// ========================================
-// GUARDADO INTELIGENTE - Solo guarda lo que cambió
-// ========================================
-
-// Guarda solo datos principales (citas, facturas, gastos, etc.) - NUNCA los pacientes
-async function saveMainData() {
-    try {
-        await db.collection('clinicaData-dev').doc('main').update({
-            facturas: appData.facturas,
-            personal: appData.personal,
-            gastos: appData.gastos,
-            avances: appData.avances,
-            cuadresDiarios: appData.cuadresDiarios || {},
-            citas: appData.citas || [],
-            laboratorios: appData.laboratorios || [],
-            reversiones: appData.reversiones || [],
-            auditLogs: appData.auditLogs || [],
-            lastUpdated: new Date().toISOString(),
-            usaSubcollectionPacientes: true
-        });
-        updateLocalCache();
-        showSyncIndicator();
-    } catch (error) {
-        console.error('❌ Error guardando datos principales:', error);
-        alert('❌ Error al guardar. Intenta de nuevo.');
-    }
-}
-
-// Guarda un solo paciente en su documento individual
-async function savePaciente(paciente) {
-    if (!paciente || !paciente.id) return;
-    try {
-        await db.collection('pacientes').doc(paciente.id).set(paciente);
-        updateLocalCache();
-        showSyncIndicator();
-    } catch (error) {
-        console.error('❌ Error guardando paciente:', error);
-        alert('❌ Error al guardar paciente. Intenta de nuevo.');
-    }
-}
-
-// saveData completo - solo para inicialización
+// Save data to Firebase
 async function saveData() {
     try {
-        await db.collection('clinicaData-dev').doc('main').set({
-            facturas: appData.facturas,
-            personal: appData.personal,
-            gastos: appData.gastos,
-            avances: appData.avances,
-            cuadresDiarios: appData.cuadresDiarios || {},
-            citas: appData.citas || [],
-            laboratorios: appData.laboratorios || [],
-            reversiones: appData.reversiones || [],
-            auditLogs: appData.auditLogs || [],
-            lastUpdated: new Date().toISOString(),
-            usaSubcollectionPacientes: true
-        });
+        console.log(`💾 Guardando datos en Firebase...`);
+        console.log(`📊 Pacientes a guardar: ${appData.pacientes.length}`);
+
+        // Calcular tamaño ANTES de guardar
+        const dataSize = new Blob([JSON.stringify(appData)]).size;
+        const sizeMB = (dataSize / (1024 * 1024)).toFixed(2);
+        console.log(`📏 Tamaño total de datos: ${sizeMB} MB`);
+
+        // Si hay muchos pacientes, guardarlos en subcollection
+        if (appData.pacientes.length > 100) {
+            console.log(`⚠️ Muchos pacientes (${appData.pacientes.length}). Usando subcollection...`);
+
+            // Guardar datos principales SIN pacientes
+            await db.collection('clinicas').doc(CLINIC_PATH).set({
+                facturas: appData.facturas,
+                personal: appData.personal,
+                gastos: appData.gastos,
+                avances: appData.avances,
+                cuadresDiarios: appData.cuadresDiarios || {},
+                pacientes: [], // Vacío - se guarda en subcollection
+                citas: appData.citas || [],
+                laboratorios: appData.laboratorios || [],
+                reversiones: appData.reversiones || [],
+                auditLogs: appData.auditLogs || [],
+                lastUpdated: new Date().toISOString(),
+                usaSubcollectionPacientes: true // Flag para saber que usa subcollection
+            });
+
+            console.log(`✅ Datos principales guardados`);
+            console.log(`💾 Guardando ${appData.pacientes.length} pacientes en subcollection...`);
+
+            // Guardar pacientes en lotes de 500 (límite de batch de Firebase)
+            const BATCH_SIZE = 500;
+
+            for (let i = 0; i < appData.pacientes.length; i += BATCH_SIZE) {
+                const batch = db.batch(); // Crear nuevo batch para cada lote
+                const lote = appData.pacientes.slice(i, Math.min(i + BATCH_SIZE, appData.pacientes.length));
+
+                lote.forEach(paciente => {
+                    const docRef = db.collection('clinicas').doc(CLINIC_PATH)
+                        .collection('pacientes').doc(paciente.id);
+                    batch.set(docRef, paciente);
+                });
+
+                await batch.commit();
+                console.log(`✅ Guardados ${Math.min(i + BATCH_SIZE, appData.pacientes.length)}/${appData.pacientes.length} pacientes`);
+            }
+
+            console.log(`✅ Todos los pacientes guardados en subcollection`);
+        } else {
+            // Pocos pacientes, guardar normalmente
+            await db.collection('clinicas').doc(CLINIC_PATH).set({
+                facturas: appData.facturas,
+                personal: appData.personal,
+                gastos: appData.gastos,
+                avances: appData.avances,
+                cuadresDiarios: appData.cuadresDiarios || {},
+                pacientes: appData.pacientes || [],
+                citas: appData.citas || [],
+                laboratorios: appData.laboratorios || [],
+                reversiones: appData.reversiones || [],
+                auditLogs: appData.auditLogs || [],
+                lastUpdated: new Date().toISOString()
+            });
+        }
+
+        console.log(`✅ Datos guardados exitosamente en Firebase`);
+
+        // Actualizar caché local
         updateLocalCache();
+
         showSyncIndicator();
     } catch (error) {
         console.error('❌ ERROR CRÍTICO guardando en Firebase:', error);
-        alert(`❌ ERROR AL GUARDAR EN FIREBASE\n\nError: ${error.code}\nMensaje: ${error.message}`);
+        console.error('Código de error:', error.code);
+        console.error('Mensaje:', error.message);
+
+        // MOSTRAR ALERTA AL USUARIO
+        alert(`❌ ERROR AL GUARDAR EN FIREBASE\n\n` +
+              `Error: ${error.code}\n` +
+              `Mensaje: ${error.message}\n\n` +
+              `Los datos NO se guardaron. Revisa la configuración de Firebase.`);
     }
 }
 
@@ -183,41 +268,7 @@ function getDefaultPersonal() {
     ];
 }
 
-// Real-time synchronization
-db.collection('clinicaData-dev').doc('main').onSnapshot((doc) => {
-    if (doc.exists && !doc.metadata.hasPendingWrites) {
-        const data = doc.data();
-        appData.facturas = data.facturas || [];
-        appData.personal = data.personal || getDefaultPersonal();
-        appData.gastos = data.gastos || [];
-        appData.avances = data.avances || [];
-        appData.cuadresDiarios = data.cuadresDiarios || {};
-        appData.pacientes = data.pacientes || [];
-        appData.citas = data.citas || [];
-        appData.laboratorios = data.laboratorios || [];
-        appData.reversiones = data.reversiones || [];
-        appData.auditLogs = data.auditLogs || [];
-
-        // Actualizar caché cuando hay cambios
-        updateLocalCache();
-
-        // Refresh current view if user is logged in
-        if (appData.currentUser) {
-            const activeTab = document.querySelector('.tab-content.active');
-            if (activeTab) {
-                const tabId = activeTab.id.replace('tab-', '');
-                if (tabId === 'ingresos') updateIngresosTab();
-                if (tabId === 'cobrar') updateCobrarTab();
-                if (tabId === 'cuadre') updateCuadreTab();
-                if (tabId === 'gastos') updateGastosTab();
-                if (tabId === 'personal') updatePersonalTab();
-                if (tabId === 'laboratorio') updateLaboratorioTab();
-                if (tabId === 'agenda') updateAgendaTab();
-                if (tabId === 'pacientes') updatePacientesTab();
-            }
-        }
-    }
-});
+// Real-time synchronization se inicializa en login() via initRealtimeListener()
 
 // ========================================
 // INITIALIZE APP
@@ -225,10 +276,19 @@ db.collection('clinicaData-dev').doc('main').onSnapshot((doc) => {
 
 // Wait for Firebase to be ready, then load data
 window.addEventListener('load', async function() {
+    // Detectar clínica activa (URL o localStorage)
+    const clinicaDetectada = detectClinica();
+
+    if (!clinicaDetectada) {
+        // Sin clínica detectada — mostrar pantalla de login de clínica
+        // Por ahora: fallback a clinica-smith para compatibilidad
+        CLINIC_PATH = 'clinica-smith';
+        console.log('⚠️ Clínica no detectada, usando clinica-smith como fallback');
+    }
+
+    console.log(`🏥 Clínica activa: ${CLINIC_PATH}`);
     await loadData();
     updateProfessionalPicker();
-
-    // Inicializar estados en citas existentes
     inicializarEstadosCitas();
 });
 
@@ -351,12 +411,19 @@ function login() {
     }
 
     appData.currentUser = username;
+    // Iniciar listener en tiempo real ahora que sabemos la clínica
+    initRealtimeListener();
     showApp();
 }
 
 // Logout
 function logout() {
     if (confirm('🚪 ¿Cerrar sesión?\n\nSe cerrará tu sesión actual.')) {
+        // Cancelar listener de Firebase
+        if (unsubscribeSnapshot) {
+            unsubscribeSnapshot();
+            unsubscribeSnapshot = null;
+        }
         appData.currentUser = null;
         appData.currentRole = null;
         document.getElementById('loginScreen').style.display = 'flex';
@@ -712,7 +779,7 @@ async function generarFactura() {
     // Crear órdenes de laboratorio vinculadas a esta factura
     await crearOrdenesLabDesdeFactura(factura);
 
-    await saveMainData();
+    await saveData();
 
     const mensaje = citaHoy
         ? `✅ Factura generada exitosamente\n\n✔️ Vinculada con cita de las ${citaHoy.hora}\n✔️ Cita marcada como Completada`
@@ -932,7 +999,7 @@ function confirmarPago() {
         currentFacturaToPay.estado = 'partial';
     }
 
-    saveMainData();
+    saveData();
 
     // Generar factura para cliente
     generarFacturaCliente(currentFacturaToPay, monto, metodo);
@@ -1368,7 +1435,7 @@ function guardarCuadreDiario(fechaTimestamp, cuadre) {
         return; // Sin cambios, no guardar
     }
     appData.cuadresDiarios[fechaTimestamp] = cuadre;
-    saveMainData();
+    saveData();
 }
 
 // Mostrar historial de última semana
@@ -1461,7 +1528,7 @@ function registrarGasto() {
     };
 
     appData.gastos.push(gasto);
-    saveMainData();
+    saveData();
     updateGastosTab();
     closeModal('modalAddGasto');
     alert('Gasto registrado exitosamente');
@@ -1500,7 +1567,7 @@ function eliminarGasto(id) {
 
     if (confirm(`🗑️ ¿Eliminar gasto?\n\n${gasto.descripcion}\nMonto: ${formatCurrency(gasto.monto)}\n${gasto.proveedor ? `Proveedor: ${gasto.proveedor}\n` : ''}\nEsta acción no se puede deshacer.`)) {
         appData.gastos = appData.gastos.filter(g => g.id !== id);
-        saveMainData();
+        saveData();
         updateGastosTab();
     }
 }
@@ -1557,7 +1624,7 @@ function agregarPersonal() {
     };
 
     appData.personal.push(person);
-    saveMainData();
+    saveData();
     updatePersonalTab();
     updateProfessionalPicker();
     closeModal('modalAddPersonal');
@@ -1808,7 +1875,7 @@ Firma: _____________________
             currentReciboText = recibo;
             document.getElementById('reciboContent').textContent = recibo;
 
-            saveMainData();
+            saveData();
             closeModal('modalPersonalDetail');
             openModal('modalRecibo');
 
@@ -1882,7 +1949,7 @@ Firma: _____________________
     currentReciboText = recibo;
     document.getElementById('reciboContent').textContent = recibo;
 
-    saveMainData();
+    saveData();
     closeModal('modalPersonalDetail');
     openModal('modalRecibo');
 
@@ -1958,7 +2025,7 @@ function guardarEdicion() {
         if (payDate) currentPersonalToEdit.nextPayDate = new Date(payDate).toISOString();
     }
 
-    saveMainData();
+    saveData();
     updatePersonalTab();
     updateProfessionalPicker();
     closeModal('modalEditPersonal');
@@ -2003,7 +2070,7 @@ function registrarAvance() {
     };
 
     appData.avances.push(avance);
-    saveMainData();
+    saveData();
     closeModal('modalAvance');
     updatePersonalTab();
     alert('Avance registrado exitosamente');
@@ -2072,7 +2139,7 @@ function eliminarPersonal(id) {
             appData.personal = appData.personal.filter(p => p.id !== id);
             // Limpiar avances huérfanos
             appData.avances = appData.avances.filter(a => a.personalId !== id);
-            saveMainData();
+            saveData();
             closeModal('modalPersonalDetail');
             closeModal('modalEditPersonal');
             updatePersonalTab();
@@ -2225,7 +2292,7 @@ function eliminarFactura(facturaId) {
             );
 
             appData.facturas = appData.facturas.filter(f => f.id !== facturaId);
-            saveMainData();
+            saveData();
             updateCobrarTab();
             alert('✅ Factura eliminada correctamente');
         }
@@ -2303,7 +2370,7 @@ function confirmarReversion() {
     appData.reversiones.push(reversion);
 
     // Guardar cambios
-    saveMainData();
+    saveData();
     updateCobrarTab();
     closeModal('modalReversarCobro');
 
@@ -2409,7 +2476,7 @@ async function guardarPaciente() {
     };
 
     appData.pacientes.push(paciente);
-    await savePaciente(paciente);
+    await saveData();
     closeModal('modalNuevoPaciente');
     updatePacientesTab();
 
@@ -3249,7 +3316,7 @@ async function guardarCita() {
     };
 
     appData.citas.push(cita);
-    await saveMainData();
+    await saveData();
     closeModal('modalNuevaCita');
     updateAgendaTab();
     alert('✅ Cita creada exitosamente');
@@ -3419,7 +3486,7 @@ async function crearOrdenesLabDesdeFactura(factura) {
     tempOrdenesLab = [];
     updateListaOrdenesLabTemp();
 
-    await saveMainData();
+    await saveData();
 }
 
 function updateLaboratorioTab() {
@@ -3698,7 +3765,7 @@ async function avanzarEstadoLab(nuevoEstado) {
 
     orden.estadoActual = nuevoEstado;
 
-    await saveMainData();
+    await saveData();
 
     verDetalleOrdenLab(orden.id);
     updateLaboratorioTab();
@@ -3796,7 +3863,7 @@ async function cambiarEstadoCita(citaId, nuevoEstado) {
         }
     }
 
-    await saveMainData();
+    await saveData();
     updateAgendaTab();
     closeModal('modalDetalleCita');
 
@@ -3814,7 +3881,7 @@ function inicializarEstadosCitas() {
     });
     if (actualizadas > 0) {
         console.log(`✅ ${actualizadas} citas actualizadas con estado inicial`);
-        saveMainData();
+        saveData();
     }
 }
 
@@ -3992,7 +4059,7 @@ async function guardarConsentimiento() {
         firmaBase64: firmaBase64
     };
 
-    await savePaciente(currentPacienteConsentimiento);
+    await saveData();
     closeModal('modalConsentimiento');
     updatePacientesTab();
 
@@ -4223,7 +4290,7 @@ async function limpiarDatosAntiguos() {
     });
 
     if (cambios > 0) {
-        await saveMainData();
+        await saveData();
         updateProfessionalPicker();
         updateReceptionPicker();
     }
@@ -4415,7 +4482,7 @@ async function guardarPlaca() {
 
         currentPacienteGaleria.placas.push(placa);
 
-        await savePaciente(currentPacienteGaleria);
+        await saveData();
 
         // Quitar loading
         document.body.removeChild(loadingMsg);
@@ -4463,7 +4530,7 @@ async function guardarPlaca() {
                 }
 
                 currentPacienteGaleria.placas.push(placa);
-                await savePaciente(currentPacienteGaleria);
+                await saveData();
 
                 closeModal('modalSubirPlaca');
                 renderizarGaleriaPlacas();
@@ -4528,7 +4595,7 @@ async function guardarEdicionPlaca() {
     placa.ultimaModificacion = new Date().toISOString();
     placa.modificadoPor = appData.currentUser;
 
-    await savePaciente(currentPacienteGaleria);
+    await saveData();
 
     closeModal('modalEditarPlaca');
     renderizarGaleriaPlacas();
@@ -4558,7 +4625,7 @@ async function eliminarPlaca(placaId) {
         // Eliminar de Firestore
         currentPacienteGaleria.placas = currentPacienteGaleria.placas.filter(p => p.id !== placaId);
 
-        await savePaciente(currentPacienteGaleria);
+        await saveData();
         renderizarGaleriaPlacas();
 
         alert('✅ Placa eliminada exitosamente');
@@ -4769,7 +4836,7 @@ async function guardarReceta() {
 
     currentPacienteRecetas.recetas.push(receta);
 
-    await savePaciente(currentPacienteRecetas);
+    await saveData();
 
     closeModal('modalNuevaReceta');
     renderizarRecetas();
@@ -4972,7 +5039,7 @@ function registrarAuditoria(accion, tipo, detalles) {
     }
 
     appData.auditLogs.push(log);
-    saveMainData();
+    saveData();
 
     console.log('📝 Auditoría:', log);
 }
@@ -5361,7 +5428,7 @@ function guardarZonaHoraria() {
     }
 
     appData.settings.timezone = timezone;
-    saveMainData();
+    saveData();
 
     console.log('✅ Zona horaria guardada:', timezone);
     alert('✅ Zona horaria actualizada correctamente');
@@ -6278,7 +6345,7 @@ function guardarEdicionPaciente() {
         return;
     }
 
-    savePaciente(paciente);
+    saveData();
     updatePacientesTab();
     closeModal('modalEditarPaciente');
 
@@ -6332,7 +6399,7 @@ function cancelarCita() {
         confirmText: 'Sí, Cancelar Cita',
         onConfirm: () => {
             cita.estado = 'Cancelada';
-            saveMainData();
+            saveData();
             closeModal('modalDetalleCita');
             updateAgendaTab();
             alert('✅ Cita cancelada');
