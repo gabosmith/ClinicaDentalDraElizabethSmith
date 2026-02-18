@@ -1,0 +1,2412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Clínica Dental Dra. Elizabeth Smith</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f5f5f7;
+            color: #1d1d1f;
+            overflow-x: hidden;
+            padding-top: 40px; /* Espacio para banner de desarrollo */
+        }
+
+        /* Banner de Desarrollo */
+        .dev-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%);
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-weight: 700;
+            z-index: 99999;
+            font-size: 14px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            letter-spacing: 0.5px;
+        }
+
+        .dev-banner::before {
+            content: "🔧 ";
+        }
+
+        /* Login Screen */
+        .login-screen {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #002366 0%, #004080 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .logo-container {
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .logo-container img {
+            max-width: 300px;
+            width: 90%;
+            height: auto;
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .role-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .role-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #002366;
+            background: white;
+            color: #002366;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .role-btn.active {
+            background: #002366;
+            color: white;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #666;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+
+        .input-group input:focus,
+        .input-group select:focus {
+            outline: none;
+            border-color: #002366;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 16px;
+            background: #002366;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .login-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 35, 102, 0.1);
+            border-radius: 10px;
+            font-size: 12px;
+            color: #002366;
+        }
+
+        /* Main App */
+        .app-container {
+            display: none;
+            min-height: 100vh;
+            padding-bottom: 70px;
+        }
+
+        .app-header {
+            background: #002366;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .app-header h1 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .content-area {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .card h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #002366;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #002366;
+        }
+
+        .stat-value.green { color: #34c759; }
+        .stat-value.orange { color: #ff9500; }
+        .stat-value.red { color: #ff3b30; }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-add {
+            background: #34c759;
+            color: white;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .btn-submit {
+            background: #002366;
+            color: white;
+            width: 100%;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-danger {
+            background: #ff3b30;
+            color: white;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #e5e5e5;
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            z-index: 100;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px;
+            color: #8e8e93;
+            cursor: pointer;
+            transition: color 0.2s;
+            border: none;
+            background: none;
+        }
+
+        .nav-item.active {
+            color: #002366;
+        }
+
+        .nav-item svg {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 4px;
+        }
+
+        .nav-item span {
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        /* Lista de items */
+        .item-list {
+            list-style: none;
+        }
+
+        .item-list li {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            cursor: pointer;
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .item-title {
+            font-weight: 600;
+            color: #1d1d1f;
+        }
+
+        .item-amount {
+            font-size: 18px;
+            font-weight: 700;
+            color: #002366;
+        }
+
+        .item-meta {
+            font-size: 13px;
+            color: #8e8e93;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #002366;
+        }
+
+        .close-modal {
+            background: #f0f0f0;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            color: #666;
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-pending {
+            background: #ff9500;
+            color: white;
+        }
+
+        .badge-paid {
+            background: #34c759;
+            color: white;
+        }
+
+        .badge-partial {
+            background: #007aff;
+            color: white;
+        }
+
+        .badge-cancelled {
+            background: #ff3b30;
+            color: white;
+            text-decoration: line-through;
+        }
+
+        /* Discount buttons */
+        .discount-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .discount-btn {
+            padding: 10px;
+            background: rgba(0, 35, 102, 0.1);
+            color: #002366;
+            border: 1px solid #002366;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .discount-btn:active {
+            background: #002366;
+            color: white;
+        }
+
+        /* Procedimientos */
+        .procedimiento-item {
+            background: #f8f8f8;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .procedimiento-delete {
+            background: #ff3b30;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .stat-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #8e8e93;
+        }
+
+        /* Image preview */
+        .image-preview {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .file-input-label {
+            display: block;
+            padding: 12px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+        .sync-indicator {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            background: #34c759;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 99;
+            opacity: 0;
+            transition: opacity 0.3s;
+            box-shadow: 0 2px 10px rgba(52, 199, 89, 0.3);
+        }
+
+        .sync-indicator.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <!-- Indicador de Sincronización -->
+    <div class="sync-indicator" id="syncIndicator">✓ Sincronizado</div>
+
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-screen">
+        <div class="logo-container">
+            <img src="logo.png" alt="Clínica Dental" id="logoImg" onerror="this.style.display='none'">
+        </div>
+
+        <div class="login-card">
+            <div class="role-selector">
+                <button class="role-btn active" data-role="professional">Profesional</button>
+                <button class="role-btn" data-role="reception">Recepción</button>
+                <button class="role-btn" data-role="admin">Admin</button>
+            </div>
+
+            <div class="input-group" id="professionalSelect">
+                <label>Seleccionar Profesional</label>
+                <select id="professionalPicker">
+                    <option value="">-- Seleccionar --</option>
+                </select>
+            </div>
+
+            <div class="input-group hidden" id="receptionSelect">
+                <label>Seleccionar Usuario</label>
+                <select id="receptionPicker">
+                    <option value="">-- Seleccionar --</option>
+                </select>
+            </div>
+
+            <div class="input-group hidden" id="usernameInput">
+                <label>Usuario</label>
+                <input type="text" id="username" autocomplete="username">
+            </div>
+
+            <div class="input-group">
+                <label>Contraseña</label>
+                <input type="password" id="password" autocomplete="current-password">
+            </div>
+
+            <button class="btn-primary" onclick="login()">Acceder</button>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="appContainer" class="app-container">
+        <div class="app-header">
+            <h1 id="appTitle">Clínica Dental</h1>
+
+            <!-- Búsqueda Global -->
+            <div style="flex: 1; max-width: 500px; margin: 0 30px; position: relative;">
+                <input
+                    type="text"
+                    id="busquedaGlobal"
+                    placeholder="🔍 Buscar paciente, factura, cita..."
+                    oninput="buscarGlobal()"
+                    autocomplete="off"
+                    style="width: 100%; padding: 10px 16px; border: 2px solid #e5e5e7; border-radius: 8px; font-size: 14px; transition: all 0.2s;"
+                    onfocus="this.style.borderColor='#007AFF'; this.style.boxShadow='0 0 0 3px rgba(0,122,255,0.1)';"
+                    onblur="this.style.borderColor='#e5e5e7'; this.style.boxShadow='none';"
+                >
+                <div id="resultadosBusqueda" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #e5e5e7; border-radius: 8px; margin-top: 8px; max-height: 500px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.15);"></div>
+            </div>
+
+            <button class="logout-btn" onclick="logout()">Salir</button>
+        </div>
+
+        <div class="content-area">
+            <!-- Crear Factura Tab -->
+
+            <!-- Tab: Pacientes -->
+            <!-- Dashboard Tab -->
+            <div id="tab-dashboard" class="tab-content">
+                <div style="margin-bottom: 20px;">
+                    <h1 style="font-size: 28px; font-weight: 700; color: #002366; margin-bottom: 5px;">📊 Dashboard</h1>
+                    <div id="dashboardFecha" style="color: #666; font-size: 14px;"></div>
+                </div>
+
+                <!-- Métricas principales -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                    <div style="background: linear-gradient(135deg, #34c759 0%, #30d158 100%); padding: 24px; border-radius: 12px; color: white; box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);">
+                        <div style="font-size: 14px; opacity: 0.9; margin-bottom: 8px;">💰 Ingresos Hoy</div>
+                        <div id="dashIngresosHoy" style="font-size: 32px; font-weight: 700; margin-bottom: 4px;">RD$ 0</div>
+                        <div id="dashIngresosComparacion" style="font-size: 12px; opacity: 0.8;"></div>
+                    </div>
+
+                    <div style="background: linear-gradient(135deg, #007aff 0%, #0051d5 100%); padding: 24px; border-radius: 12px; color: white; box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);">
+                        <div style="font-size: 14px; opacity: 0.9; margin-bottom: 8px;">📅 Citas Hoy</div>
+                        <div id="dashCitasHoy" style="font-size: 32px; font-weight: 700; margin-bottom: 4px;">0</div>
+                        <div id="dashCitasPendientes" style="font-size: 12px; opacity: 0.8;"></div>
+                    </div>
+
+                    <div style="background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%); padding: 24px; border-radius: 12px; color: white; box-shadow: 0 4px 12px rgba(255, 149, 0, 0.3);">
+                        <div style="font-size: 14px; opacity: 0.9; margin-bottom: 8px;">💳 Por Cobrar</div>
+                        <div id="dashPorCobrar" style="font-size: 32px; font-weight: 700; margin-bottom: 4px;">RD$ 0</div>
+                        <div id="dashFacturasPendientes" style="font-size: 12px; opacity: 0.8;"></div>
+                    </div>
+
+                    <div style="background: linear-gradient(135deg, #af52de 0%, #8e24aa 100%); padding: 24px; border-radius: 12px; color: white; box-shadow: 0 4px 12px rgba(175, 82, 222, 0.3);">
+                        <div style="font-size: 14px; opacity: 0.9; margin-bottom: 8px;">🔬 Lab Activo</div>
+                        <div id="dashLabActivo" style="font-size: 32px; font-weight: 700; margin-bottom: 4px;">0</div>
+                        <div id="dashLabPendiente" style="font-size: 12px; opacity: 0.8;"></div>
+                    </div>
+                </div>
+
+                <!-- Alertas -->
+                <div id="dashboardAlertas" class="card" style="background: #fff3cd; border-left: 4px solid #ffc107; display: none; margin-bottom: 24px;">
+                    <h3 style="color: #856404; font-size: 16px; margin-bottom: 12px;">⚠️ Alertas</h3>
+                    <ul id="dashAlertasList" style="margin: 0; padding-left: 20px; color: #856404;"></ul>
+                </div>
+
+                <!-- Agenda del día -->
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h3 style="margin: 0; font-size: 18px; color: #002366;">📅 Agenda de Hoy</h3>
+                        <button class="btn btn-secondary" onclick="showTab('agenda')" style="padding: 8px 16px; font-size: 13px;">Ver Todas</button>
+                    </div>
+                    <div id="dashAgendaHoy"></div>
+                </div>
+            </div>
+
+            <!-- Pacientes Tab -->
+            <div id="tab-pacientes" class="tab-content">
+                <button class="btn btn-add" onclick="abrirModalNuevoPaciente()">+ Nuevo Paciente</button>
+
+                <div style="margin: 20px 0;">
+                    <input type="text" id="searchPacientes" placeholder="🔍 Buscar paciente..." onkeyup="filterPacientes()" style="width: 100%; padding: 14px 20px; border: 2px solid #e5e5e7; border-radius: 12px; font-size: 15px;">
+                </div>
+
+                <div id="listaPacientes"></div>
+            </div>
+
+            <!-- Tab: Agenda -->
+            <div id="tab-agenda" class="tab-content">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                    <button class="btn btn-add" onclick="abrirModalNuevaCita()">+ Nueva Cita</button>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button class="btn btn-secondary" onclick="exportarCitasExcel()" style="font-size: 13px; padding: 8px 16px;">
+                            📥 Exportar Excel
+                        </button>
+                        <div id="agendaToggle"></div>
+                    </div>
+                </div>
+
+                <!-- Filtros de Citas -->
+                <div class="card" style="background: #f8f9fa; margin-bottom: 20px;">
+                    <h3 style="font-size: 16px; color: #002366; margin-bottom: 12px;">🔍 Filtros</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-size: 13px;">Estado:</label>
+                            <select id="filtroEstadoCita" onchange="updateAgendaTab()">
+                                <option value="todos">Todos</option>
+                                <option value="Pendiente">Pendiente</option>
+                                <option value="Confirmada">Confirmada</option>
+                                <option value="En Sala de Espera">En Sala de Espera</option>
+                                <option value="Completada">Completada</option>
+                                <option value="Cancelada">Cancelada</option>
+                                <option value="Inasistencia">Inasistencia</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-size: 13px;">Profesional:</label>
+                            <select id="filtroProfesionalCita" onchange="updateAgendaTab()">
+                                <option value="todos">Todos</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-size: 13px;">Paciente:</label>
+                            <input type="text" id="filtroPacienteCita" placeholder="Buscar..." oninput="updateAgendaTab()">
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: center; align-items: center; gap: 20px; background: white; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 30px;">
+                    <button class="btn" onclick="cambiarSemana(-1)" style="padding: 10px 20px; font-size: 18px;">←</button>
+                    <h2 id="agendaSemanaTexto" style="margin: 0; min-width: 300px; text-align: center; font-size: 18px; font-weight: 600; color: #002366;">Semana</h2>
+                    <button class="btn" onclick="cambiarSemana(1)" style="padding: 10px 20px; font-size: 18px;">→</button>
+                </div>
+
+                <div id="calendarioAgenda" style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.08);"></div>
+            </div>
+            <div id="tab-factura" class="tab-content">
+                <div class="card">
+                    <h2>Nueva Factura</h2>
+
+                    <!-- Selector de profesional (solo visible para admin) -->
+                    <div class="form-group" id="selectorProfesionalFactura" style="display: none;">
+                        <label>Profesional que atendió *</label>
+                        <select id="profesionalQueAtendio" style="width: 100%; padding: 10px; border: 2px solid #e5e5e7; border-radius: 8px; font-size: 14px;">
+                            <option value="">Seleccione el profesional...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Nombre del Paciente *</label>
+                        <input type="text" id="pacienteNombre" placeholder="Escribe para buscar..." oninput="buscarPacienteFactura()" autocomplete="off">
+                        <div id="pacienteNombreSuggestions" style="display: none; position: absolute; background: white; border: 1px solid #e5e5e7; border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 1000; width: calc(100% - 40px); margin-top: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Procedimientos</label>
+                        <div id="procedimientosList"></div>
+                        <button class="btn btn-add" onclick="openAddProcedimiento()">+ Agregar Procedimiento</button>
+                    </div>
+
+                    <!-- SECCIÓN DE LABORATORIO -->
+                    <div class="form-group">
+                        <label>Órdenes de Laboratorio (Opcional)</label>
+                        <div id="listaOrdenesLabTemp" style="margin-bottom: 10px;"></div>
+                        <button class="btn" onclick="abrirModalOrdenLab()" style="background: #AF52DE; color: white;">🔬 + Agregar Orden de Lab</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Descuento (%)</label>
+                        <input type="range" id="descuentoSlider" min="0" max="100" value="0" oninput="updateDescuento()">
+                        <div style="text-align: center; margin: 10px 0; font-weight: 600; color: #002366;">
+                            <span id="descuentoValue">0</span>%
+                        </div>
+                        <div class="discount-buttons">
+                            <button class="discount-btn" onclick="setDescuento(5)">5%</button>
+                            <button class="discount-btn" onclick="setDescuento(10)">10%</button>
+                            <button class="discount-btn" onclick="setDescuento(15)">15%</button>
+                            <button class="discount-btn" onclick="setDescuento(20)">20%</button>
+                        </div>
+                    </div>
+
+                    <div class="card" style="background: #f8f8f8;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 600;">TOTAL</span>
+                            <span style="font-size: 28px; font-weight: 700; color: #34c759;" id="totalFactura">RD$ 0.00</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Notas (Opcional)</label>
+                        <textarea id="notasFactura"></textarea>
+                    </div>
+
+                    <button class="btn btn-submit" onclick="generarFactura()">Generar Factura</button>
+                </div>
+            </div>
+
+            <!-- Mis Ingresos Tab -->
+            <div id="tab-ingresos" class="tab-content">
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Ingresos Hoy</div>
+                        <div class="stat-value" id="ingresosHoy">RD$ 0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Comisiones Hoy</div>
+                        <div class="stat-value green" id="comisionesHoy">RD$ 0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Comisiones Acumuladas</div>
+                        <div class="stat-value orange" id="comisionesAcum">RD$ 0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Por Cobrar</div>
+                        <div class="stat-value red" id="porCobrar">RD$ 0</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Mis Facturas</h2>
+                    <ul class="item-list" id="facturasPersonal"></ul>
+                </div>
+            </div>
+
+            <!-- Cobrar Tab -->
+            <div id="tab-cobrar" class="tab-content">
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Pendientes</div>
+                        <div class="stat-value" id="pendientesCount">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Cobrado Hoy</div>
+                        <div class="stat-value green" id="cobradoHoy">RD$ 0</div>
+                    </div>
+                </div>
+
+                <!-- Filtros Avanzados -->
+                <div class="card" style="background: #f8f9fa;">
+                    <h3 style="font-size: 16px; color: #002366; margin-bottom: 12px;">🔍 Filtros</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-size: 13px;">Desde:</label>
+                            <input type="date" id="filtroFechaDesde" onchange="aplicarFiltrosFacturas()">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-size: 13px;">Hasta:</label>
+                            <input type="date" id="filtroFechaHasta" onchange="aplicarFiltrosFacturas()">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-size: 13px;">Estado:</label>
+                            <select id="filtroEstadoFactura" onchange="aplicarFiltrosFacturas()">
+                                <option value="todos">Todas</option>
+                                <option value="pendiente" selected>Pendientes</option>
+                                <option value="pagada">Pagadas</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-size: 13px;">Paciente:</label>
+                            <input type="text" id="filtroPacienteFactura" placeholder="Buscar..." oninput="aplicarFiltrosFacturas()">
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary" onclick="limpiarFiltrosFacturas()" style="margin-top: 10px; width: 100%; font-size: 13px;">
+                        🔄 Limpiar Filtros
+                    </button>
+                </div>
+
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h2>Facturas</h2>
+                        <button class="btn btn-secondary" onclick="exportarFacturasExcel()" style="font-size: 13px; padding: 8px 16px;">
+                            📥 Exportar Excel
+                        </button>
+                    </div>
+                    <ul class="item-list" id="facturasPendientes"></ul>
+                </div>
+            </div>
+
+            <!-- Cuadre Tab -->
+            <div id="tab-cuadre" class="tab-content">
+                <div class="card">
+                    <h2>Resumen del Día</h2>
+                    <div style="color: #666; margin-bottom: 20px;" id="fechaCuadre"></div>
+
+                    <!-- EFECTIVO INICIAL -->
+                    <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #002366;">💰 Efectivo Inicial en Caja</label>
+                        <input type="number" id="efectivoInicial" step="0.01" value="0" onchange="updateCuadreTab()" style="width: 100%; padding: 10px; border: 2px solid #002366; border-radius: 6px; font-size: 16px; font-weight: 600;">
+                    </div>
+
+                    <h3 style="margin: 20px 0 10px; color: #002366;">Ingresos por Método</h3>
+                    <div style="margin-bottom: 10px; display: flex; justify-content: space-between;">
+                        <span>💵 Efectivo</span>
+                        <strong id="efectivoHoy">RD$ 0</strong>
+                    </div>
+                    <div style="margin-bottom: 10px; display: flex; justify-content: space-between;">
+                        <span>💳 Tarjeta</span>
+                        <strong id="tarjetaHoy">RD$ 0</strong>
+                    </div>
+                    <div style="margin-bottom: 10px; display: flex; justify-content: space-between;">
+                        <span>🔄 Transferencia</span>
+                        <strong id="transferenciaHoy">RD$ 0</strong>
+                    </div>
+                    <div style="margin: 15px 0; padding-top: 15px; border-top: 2px solid #34c759; display: flex; justify-content: space-between;">
+                        <strong>Total Ingresos</strong>
+                        <strong style="color: #34c759; font-size: 20px;" id="totalIngresosHoy">RD$ 0</strong>
+                    </div>
+
+                    <h3 style="margin: 20px 0 10px; color: #ff3b30;">Egresos</h3>
+                    <div style="margin-bottom: 10px; display: flex; justify-content: space-between;">
+                        <span>🛒 Gastos del Día</span>
+                        <strong style="color: #ff3b30;" id="gastosHoy">RD$ 0</strong>
+                    </div>
+                    <div style="margin-bottom: 10px; display: flex; justify-content: space-between;">
+                        <span>💵 Gastos en Efectivo</span>
+                        <strong style="color: #ff9500;" id="gastosEfectivoHoy">RD$ 0</strong>
+                    </div>
+
+                    <div style="margin: 20px 0; padding: 20px; background: #f8f8f8; border-radius: 12px;">
+                        <div style="font-size: 16px; font-weight: 600; margin-bottom: 10px;">Balance del Día</div>
+                        <div style="font-size: 32px; font-weight: 700; color: #34c759;" id="balanceDia">RD$ 0</div>
+                    </div>
+
+                    <div style="padding: 15px; background: rgba(0, 35, 102, 0.1); border-radius: 12px;">
+                        <div style="font-weight: 600; margin-bottom: 5px; color: #002366;">Efectivo Esperado en Caja</div>
+                        <div style="font-size: 24px; font-weight: 700; color: #002366;" id="efectivoCaja">RD$ 0</div>
+                    </div>
+
+                    <!-- DETALLE DE TRANSACCIONES -->
+                    <div id="detalleTransacciones" style="margin-top: 30px; display: none;">
+                        <h3 style="color: #002366; margin-bottom: 15px;">📝 Detalle de Transacciones</h3>
+
+                        <!-- Ingresos -->
+                        <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                            <h4 style="color: #34c759; margin-bottom: 10px; font-size: 15px;">✅ Ingresos</h4>
+                            <div id="listaIngresos" style="font-size: 13px;"></div>
+                        </div>
+
+                        <!-- Gastos -->
+                        <div style="background: #fff5f5; padding: 15px; border-radius: 8px;">
+                            <h4 style="color: #ff3b30; margin-bottom: 10px; font-size: 15px;">❌ Gastos</h4>
+                            <div id="listaGastos" style="font-size: 13px;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Historial de Cuadres (Solo Admin) -->
+                <div id="historialCuadres" class="card" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h2>Historial (Última Semana)</h2>
+                        <button class="btn btn-secondary" onclick="exportarCuadreExcel()" style="padding: 8px 16px; font-size: 13px;">
+                            📥 Exportar Excel
+                        </button>
+                    </div>
+                    <ul class="item-list" id="historialCuadresList"></ul>
+                </div>
+            </div>
+
+            <!-- Gastos Tab -->
+            <div id="tab-gastos" class="tab-content">
+                <button class="btn btn-add" onclick="openAddGasto()">+ Nuevo Gasto</button>
+                <div class="card">
+                    <h2>Gastos Registrados</h2>
+                    <ul class="item-list" id="gastosList"></ul>
+                </div>
+            </div>
+
+            <!-- Tab: Laboratorio (Seguimiento) -->
+            <div id="tab-laboratorio" class="tab-content">
+                <div class="card">
+                    <h2>🔬 Laboratorio</h2>
+
+                    <!-- Estadísticas -->
+                    <div id="statsLaboratorio"></div>
+
+                    <!-- Filtros -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px;">
+                        <div class="form-group">
+                            <label>Filtrar por estado</label>
+                            <select id="filtroEstadoLab" onchange="updateLaboratorioTab()">
+                                <option value="todos">Todos</option>
+                                <option value="Toma de impresión">Toma de impresión</option>
+                                <option value="Enviado a laboratorio">Enviado a laboratorio</option>
+                                <option value="Listo para prueba">Listo para prueba</option>
+                                <option value="Entregado">Entregado</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="filtroProfGroup">
+                            <label>Filtrar por profesional</label>
+                            <select id="filtroProfesionalLab" onchange="updateLaboratorioTab()">
+                                <option value="todos">Todos</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Lista de órdenes -->
+                    <div id="listaLaboratorio"></div>
+                </div>
+            </div>
+
+            <!-- Reportes Tab -->
+            <div id="tab-reportes" class="tab-content">
+                <!-- Selector de Período -->
+                <div class="card">
+                    <h2>📊 Reportes y Análisis</h2>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+                        <div class="form-group">
+                            <label>Desde</label>
+                            <input type="date" id="reporteFechaInicio">
+                        </div>
+                        <div class="form-group">
+                            <label>Hasta</label>
+                            <input type="date" id="reporteFechaFin">
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <button class="btn" style="background: #007AFF; color: white;" onclick="setReportePeriodo('hoy')">Hoy</button>
+                        <button class="btn" style="background: #007AFF; color: white;" onclick="setReportePeriodo('semana')">Esta Semana</button>
+                        <button class="btn" style="background: #007AFF; color: white;" onclick="setReportePeriodo('mes')">Este Mes</button>
+                        <button class="btn btn-submit" onclick="generarReporte()">🔍 Generar</button>
+                    </div>
+                </div>
+
+                <!-- Resumen General -->
+                <div class="card">
+                    <h3 style="color: #002366; margin-bottom: 15px;">💰 Resumen Financiero</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div style="background: linear-gradient(135deg, #34c759 0%, #30d158 100%); color: white; padding: 15px; border-radius: 12px;">
+                            <div style="font-size: 12px; opacity: 0.9;">Total Cobrado</div>
+                            <div id="reporteTotalCobrado" style="font-size: 24px; font-weight: 700; margin-top: 5px;">RD$ 0</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #ff3b30 0%, #ff453a 100%); color: white; padding: 15px; border-radius: 12px;">
+                            <div style="font-size: 12px; opacity: 0.9;">Total Gastos</div>
+                            <div id="reporteTotalGastos" style="font-size: 24px; font-weight: 700; margin-top: 5px;">RD$ 0</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #007AFF 0%, #0A84FF 100%); color: white; padding: 15px; border-radius: 12px;">
+                            <div style="font-size: 12px; opacity: 0.9;">Balance Neto</div>
+                            <div id="reporteBalanceNeto" style="font-size: 24px; font-weight: 700; margin-top: 5px;">RD$ 0</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #ff9500 0%, #ff9f0a 100%); color: white; padding: 15px; border-radius: 12px;">
+                            <div style="font-size: 12px; opacity: 0.9;">Pendiente Cobro</div>
+                            <div id="reportePendiente" style="font-size: 24px; font-weight: 700; margin-top: 5px;">RD$ 0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Por Profesional -->
+                <div class="card">
+                    <h3 style="color: #002366; margin-bottom: 15px;">👨‍⚕️ Por Profesional</h3>
+                    <div id="reportePorProfesional"></div>
+                </div>
+
+                <!-- Top Procedimientos -->
+                <div class="card">
+                    <h3 style="color: #002366; margin-bottom: 15px;">🦷 Procedimientos Más Realizados</h3>
+                    <ul class="item-list" id="reporteTopProcedimientos"></ul>
+                </div>
+
+                <!-- Laboratorio -->
+                <div class="card">
+                    <h3 style="color: #002366; margin-bottom: 15px;">🔬 Estadísticas de Laboratorio</h3>
+                    <div id="reporteLaboratorio"></div>
+                </div>
+            </div>
+
+            <!-- Personal Tab -->
+            <div id="tab-personal" class="tab-content">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 15px; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn btn-add" onclick="openAddPersonal()">+ Agregar Personal</button>
+                    <button class="btn btn-secondary" onclick="exportarComisionesExcel()" style="font-size: 13px; padding: 8px 16px;">
+                        📥 Exportar Comisiones
+                    </button>
+                </div>
+                <div class="card">
+                    <h2>Personal de la Clínica</h2>
+                    <ul class="item-list" id="personalList"></ul>
+                </div>
+            </div>
+
+            <!-- Perfil Tab -->
+            <!-- Perfil Tab -->
+            <div id="tab-perfil" class="tab-content">
+                <div class="card">
+                    <h2>Mi Perfil</h2>
+                    <div style="margin-bottom: 15px;">
+                        <div style="color: #666; font-size: 14px;">Nombre</div>
+                        <div style="font-weight: 600; font-size: 18px;" id="perfilNombre"></div>
+                    </div>
+                    <div style="margin-bottom: 25px;">
+                        <div style="color: #666; font-size: 14px;">Rol</div>
+                        <div style="font-weight: 600; font-size: 18px;" id="perfilRol"></div>
+                    </div>
+
+                    <button class="btn btn-danger" style="width: 100%;" onclick="logout()">Cerrar Sesión</button>
+
+                    <!-- Botón de Auditoría (Solo Admin) -->
+                    <button class="btn btn-secondary" id="btnAuditoria" style="width: 100%; margin-top: 15px; display: none;" onclick="verAuditoria()">
+                        📋 Ver Historial de Auditoría
+                    </button>
+                </div>
+
+                <!-- Configuración de Zona Horaria (Solo Admin) -->
+                <div class="card" id="timezoneCard" style="display: none;">
+                    <h2>🌍 Configuración Regional</h2>
+                    <div class="form-group">
+                        <label>Zona Horaria</label>
+                        <select id="timezoneSelect" onchange="guardarZonaHoraria()">
+                            <option value="America/Santo_Domingo">República Dominicana (AST)</option>
+                            <option value="America/New_York">New York (EST/EDT)</option>
+                            <option value="America/Chicago">Chicago (CST/CDT)</option>
+                            <option value="America/Denver">Denver (MST/MDT)</option>
+                            <option value="America/Los_Angeles">Los Angeles (PST/PDT)</option>
+                            <option value="America/Mexico_City">Ciudad de México (CST)</option>
+                            <option value="America/Bogota">Bogotá (COT)</option>
+                            <option value="America/Lima">Lima (PET)</option>
+                            <option value="America/Santiago">Santiago (CLT)</option>
+                            <option value="America/Sao_Paulo">São Paulo (BRT)</option>
+                            <option value="Europe/Madrid">Madrid (CET)</option>
+                            <option value="Europe/London">Londres (GMT/BST)</option>
+                        </select>
+                    </div>
+                    <div style="background: #f0f4ff; padding: 12px; border-radius: 8px; font-size: 13px; color: #002366;">
+                        💡 La zona horaria afecta cómo se muestran las fechas en reportes y exportaciones.
+                    </div>
+                </div>
+
+                <!-- Importar Pacientes (Solo Admin) -->
+                <div class="card" id="importarCard" style="display: none;">
+                    <h2>📥 Importar Pacientes desde CSV</h2>
+                    <p style="color: #666; margin-bottom: 20px; font-size: 14px;">
+                        Sube un archivo CSV con los datos de tus pacientes del sistema anterior.
+                    </p>
+
+                    <!-- Paso 1: Subir archivo -->
+                    <div id="paso1-upload" style="margin-bottom: 20px;">
+                        <div style="border: 2px dashed #007AFF; border-radius: 12px; padding: 30px; text-align: center; background: #f8f9fa; cursor: pointer;" onclick="document.getElementById('csvFileInput').click()">
+                            <div style="font-size: 48px; margin-bottom: 10px;">📂</div>
+                            <div style="font-size: 16px; font-weight: 600; color: #002366; margin-bottom: 8px;">
+                                Click aquí para seleccionar archivo CSV
+                            </div>
+                            <div style="font-size: 13px; color: #666;">
+                                o arrastra y suelta tu archivo aquí
+                            </div>
+                        </div>
+                        <input type="file" id="csvFileInput" accept=".csv" onchange="procesarCSV()" style="display: none;">
+                        <div id="archivoSeleccionado" style="margin-top: 10px; padding: 10px; background: #e3f2fd; border-radius: 8px; display: none;">
+                            <div style="font-size: 14px; color: #002366; font-weight: 600;">
+                                ✓ Archivo seleccionado: <span id="nombreArchivo"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Paso 2: Mapear columnas -->
+                    <div id="paso2-mapeo" style="display: none; margin-bottom: 20px;">
+                        <h3 style="color: #002366; margin-bottom: 15px; font-size: 16px;">Mapear Columnas</h3>
+                        <div id="mapeoColumnas"></div>
+                    </div>
+
+                    <!-- Paso 3: Vista previa -->
+                    <div id="paso3-preview" style="display: none; margin-bottom: 20px;">
+                        <h3 style="color: #002366; margin-bottom: 15px; font-size: 16px;">Vista Previa</h3>
+                        <div id="vistaPrevia"></div>
+                    </div>
+
+                    <!-- Paso 4: Importar -->
+                    <div id="paso4-importar" style="display: none;">
+                        <button class="btn btn-submit" onclick="ejecutarImportacion()" style="font-size: 16px; padding: 14px 24px; width: 100%;">
+                            ✅ Importar Pacientes
+                        </button>
+                    </div>
+
+                    <!-- Resultado -->
+                    <div id="resultadoImportacion" style="display: none; margin-top: 20px;"></div>
+                </div>
+
+                <!-- Historial de Reversiones (Solo Admin) -->
+                <div class="card" id="reversionesCard" style="display: none;">
+                    <h2>📋 Historial de Reversiones</h2>
+                    <ul class="item-list" id="reversionesList"></ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav" id="bottomNav"></div>
+    </div>
+
+    <!-- Modals -->
+    <div id="modalAddProcedimiento" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Agregar Procedimiento</div>
+                <button class="close-modal" onclick="closeModal('modalAddProcedimiento')">×</button>
+            </div>
+            <div class="form-group">
+                <label>Descripción</label>
+                <input type="text" id="procDesc" placeholder="Ej: Resina, Limpieza...">
+            </div>
+            <div class="form-group">
+                <label>Cantidad</label>
+                <input type="number" id="procCant" value="1" min="1">
+            </div>
+            <div class="form-group">
+                <label>Precio Unitario</label>
+                <input type="number" id="procPrecio" placeholder="0.00" step="0.01">
+            </div>
+            <button class="btn btn-submit" onclick="agregarProcedimiento()">Agregar</button>
+        </div>
+    </div>
+
+    <div id="modalPagarFactura" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Procesar Pago</div>
+                <button class="close-modal" onclick="closeModal('modalPagarFactura')">×</button>
+            </div>
+            <div style="background: #f8f8f8; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <div style="margin-bottom: 10px;">
+                    <strong>Factura:</strong> <span id="pagoFacturaNum"></span>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <strong>Paciente:</strong> <span id="pagoPaciente"></span>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <strong>Atendido por:</strong> <span id="pagoProfesional"></span>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <strong>Total:</strong> <span style="font-weight: 700;" id="pagoTotal"></span>
+                </div>
+                <div>
+                    <strong>Balance Pendiente:</strong> <span style="color: #ff3b30; font-weight: 700;" id="pagoBalance"></span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Tipo de Pago</label>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <button class="btn" id="btnPagoTotal" onclick="selectTipoPago('total')" style="flex: 1; background: #002366; color: white;">
+                        Pago Total
+                    </button>
+                    <button class="btn" id="btnPagoAbono" onclick="selectTipoPago('abono')" style="flex: 1; background: #f0f0f0; color: #333;">
+                        Abono a Cuenta
+                    </button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Monto a Pagar</label>
+                <input type="number" id="pagoMonto" placeholder="0.00" step="0.01">
+            </div>
+            <div class="form-group">
+                <label>Método de Pago</label>
+                <select id="pagoMetodo">
+                    <option value="efectivo">Efectivo</option>
+                    <option value="tarjeta">Tarjeta</option>
+                    <option value="transferencia">Transferencia</option>
+                </select>
+            </div>
+            <div id="comprobanteSection" class="form-group hidden">
+                <label>Comprobante (Opcional)</label>
+                <label for="comprobanteFile" class="file-input-label">
+                    📷 Adjuntar Foto
+                </label>
+                <input type="file" id="comprobanteFile" accept="image/*">
+                <img id="comprobantePreview" class="image-preview hidden">
+            </div>
+            <div style="background: rgba(0, 35, 102, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span>Nuevo Balance:</span>
+                    <strong id="nuevoBalance" style="color: #002366;">RD$ 0.00</strong>
+                </div>
+            </div>
+            <button class="btn btn-submit" onclick="confirmarPago()">Confirmar Pago</button>
+        </div>
+    </div>
+
+    <!-- Modal Factura Cliente -->
+    <div id="modalFacturaCliente" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <div class="modal-title">Factura para Cliente</div>
+                <button class="close-modal" onclick="closeModal('modalFacturaCliente')">×</button>
+            </div>
+            <div id="facturaClienteContent" style="background: white; padding: 30px; border-radius: 8px; border: 2px solid #002366;"></div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-submit" onclick="descargarFacturaImagen()" style="flex: 1; background: #25D366;">
+                    📱 Descargar para WhatsApp
+                </button>
+                <button class="btn btn-submit" onclick="imprimirFactura()" style="flex: 1;">
+                    🖨️ Imprimir
+                </button>
+                <button class="btn btn-secondary" onclick="copiarFactura()" style="flex: 1;">
+                    📋 Copiar
+                </button>
+            </div>
+            <div id="mensajeDescarga" style="display: none; margin-top: 15px; padding: 12px; background: #e8f5e9; border-radius: 8px; text-align: center; color: #2e7d32; font-size: 14px;"></div>
+        </div>
+    </div>
+
+    <div id="modalAddGasto" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Nuevo Gasto</div>
+                <button class="close-modal" onclick="closeModal('modalAddGasto')">×</button>
+            </div>
+            <div class="form-group">
+                <label>Descripción</label>
+                <input type="text" id="gastoDesc">
+            </div>
+            <div class="form-group">
+                <label>Monto</label>
+                <input type="number" id="gastoMonto" step="0.01">
+            </div>
+            <div class="form-group">
+                <label>Proveedor</label>
+                <input type="text" id="gastoProveedor">
+            </div>
+            <div class="form-group">
+                <label>Método de Pago</label>
+                <select id="gastoMetodo">
+                    <option value="efectivo">Efectivo</option>
+                    <option value="tarjeta">Tarjeta</option>
+                    <option value="transferencia">Transferencia</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Factura (Opcional)</label>
+                <label for="gastoFile" class="file-input-label">
+                    📷 Adjuntar Foto
+                </label>
+                <input type="file" id="gastoFile" accept="image/*">
+                <img id="gastoPreview" class="image-preview hidden">
+            </div>
+            <button class="btn btn-submit" onclick="registrarGasto()">Registrar Gasto</button>
+        </div>
+    </div>
+
+    <div id="modalAddPersonal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Agregar Personal</div>
+                <button class="close-modal" onclick="closeModal('modalAddPersonal')">×</button>
+            </div>
+            <div class="form-group">
+                <label>Nombre</label>
+                <input type="text" id="personalNombre">
+            </div>
+            <div class="form-group">
+                <label>Tipo</label>
+                <select id="personalTipo" onchange="toggleSueldo()">
+                    <option value="regular">Odontólogo Regular (60%)</option>
+                    <option value="especialista">Especialista (50%)</option>
+                    <option value="empleado">Empleado</option>
+                </select>
+            </div>
+            <div class="form-group" id="exequaturGroup">
+                <label>Exequatur (Registro Médico)</label>
+                <input type="text" id="personalExequatur" placeholder="Número de exequatur para profesionales">
+            </div>
+            <div class="form-group hidden" id="sueldoGroup">
+                <label>Sueldo Mensual</label>
+                <input type="number" id="personalSueldo" step="0.01">
+            </div>
+            <div class="form-group" id="passwordGroup">
+                <label>Contraseña (Opcional)</label>
+                <input type="password" id="personalPassword">
+            </div>
+            <button class="btn btn-submit" onclick="agregarPersonal()">Agregar Personal</button>
+        </div>
+    </div>
+
+    <div id="modalPersonalDetail" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="personalDetailName"></div>
+                <button class="close-modal" onclick="closeModal('modalPersonalDetail')">×</button>
+            </div>
+            <div id="personalDetailContent"></div>
+        </div>
+    </div>
+
+    <div id="modalAvance" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Avance de Salario</div>
+                <button class="close-modal" onclick="closeModal('modalAvance')">×</button>
+            </div>
+            <div class="form-group">
+                <label>Monto</label>
+                <input type="number" id="avanceMonto" step="0.01">
+            </div>
+            <div class="form-group">
+                <label>Notas</label>
+                <input type="text" id="avanceNotas" placeholder="Ej: Avance semanal, emergencia...">
+            </div>
+            <button class="btn btn-submit" onclick="registrarAvance()">Registrar Avance</button>
+        </div>
+    </div>
+
+    <!-- Modal Ver Comprobante -->
+    <div id="modalVerComprobante" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Comprobante de Pago</div>
+                <button class="close-modal" onclick="closeModal('modalVerComprobante')">×</button>
+            </div>
+            <img id="comprobanteDisplay" class="image-preview" style="display: block;">
+        </div>
+    </div>
+
+    <!-- Modal Reversar Cobro -->
+    <div id="modalReversarCobro" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">⚠️ Reversar Cobro</div>
+                <button class="close-modal" onclick="closeModal('modalReversarCobro')">×</button>
+            </div>
+            <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #ff9500;">
+                <strong style="color: #856404;">¡Atención!</strong>
+                <p style="margin-top: 8px; color: #856404; font-size: 14px;">Esta acción eliminará el último pago registrado y ajustará el estado de la factura.</p>
+            </div>
+            <div style="background: #f8f8f8; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <div style="margin-bottom: 10px;">
+                    <strong>Factura:</strong> <span id="reversarFacturaNum"></span>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <strong>Paciente:</strong> <span id="reversarPaciente"></span>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <strong>Último Pago:</strong> <span style="color: #ff3b30; font-weight: 700;" id="reversarMonto"></span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Motivo de la Reversión *</label>
+                <textarea id="reversarMotivo" placeholder="Ej: Error en el monto, pago duplicado, cancelación del cliente..." rows="3"></textarea>
+            </div>
+            <button class="btn btn-danger" onclick="confirmarReversion()" style="width: 100%;">🔄 Confirmar Reversión</button>
+        </div>
+    </div>
+
+    <!-- Modal Editar Personal -->
+    <div id="modalEditPersonal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Editar Personal</div>
+                <button class="close-modal" onclick="closeModal('modalEditPersonal')">×</button>
+            </div>
+            <div class="form-group">
+                <label>Nombre</label>
+                <input type="text" id="editNombre">
+            </div>
+            <div class="form-group" id="editSueldoGroup">
+                <label>Sueldo Mensual</label>
+                <input type="number" id="editSueldo" step="0.01">
+            </div>
+            <div class="form-group" id="editPasswordGroup">
+                <label>Nueva Contraseña</label>
+                <input type="password" id="editPassword" placeholder="Dejar vacío para no cambiar">
+            </div>
+            <div class="form-group" id="editReceptionGroup">
+                <label>Acceso a Recepción</label>
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin-top: 8px;">
+                    <input type="checkbox" id="editReceptionAccess" style="width: 20px; height: 20px; cursor: pointer;">
+                    <span style="font-size: 14px;">Permitir acceso al módulo de Recepción</span>
+                </label>
+            </div>
+            <div class="form-group" id="editPayDateGroup">
+                <label>Próxima Fecha de Pago</label>
+                <input type="date" id="editPayDate">
+            </div>
+            <button class="btn btn-submit" onclick="guardarEdicion()">Guardar Cambios</button>
+        </div>
+    </div>
+
+    <!-- Modal Generar Recibo -->
+    <div id="modalRecibo" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Recibo Generado</div>
+                <button class="close-modal" onclick="closeModal('modalRecibo')">×</button>
+            </div>
+            <div id="reciboContent" style="white-space: pre-wrap; font-family: monospace; padding: 20px; background: #f8f8f8; border-radius: 8px; margin-bottom: 20px;"></div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-submit" onclick="compartirWhatsApp()" style="background: #25D366;">
+                    📱 Enviar por WhatsApp
+                </button>
+                <button class="btn btn-submit" onclick="copiarRecibo()">
+                    📋 Copiar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Agregar Orden de Laboratorio -->
+    <div id="modalOrdenLab" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Agregar Orden de Laboratorio</div>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Tipo de Trabajo</label>
+                    <select id="labTipo">
+                        <option value="Corona">Corona</option>
+                        <option value="Puente">Puente</option>
+                        <option value="Prótesis Parcial">Prótesis Parcial</option>
+                        <option value="Prótesis Total">Prótesis Total</option>
+                        <option value="Ortodoncia">Ortodoncia (Aparato)</option>
+                        <option value="Placa Miorrelajante">Placa Miorrelajante</option>
+                        <option value="Otro">Otro</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Dientes Involucrados (Opcional)</label>
+                    <input type="text" id="labDientes" placeholder="Ej: 11, 12, 13">
+                </div>
+                <div class="form-group">
+                    <label>Descripción del Trabajo</label>
+                    <textarea id="labDescripcion" placeholder="Corona metal-cerámica, color A3..." rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Laboratorio Externo</label>
+                    <input type="text" id="labLaboratorio" placeholder="Nombre del laboratorio">
+                </div>
+                <div class="form-group">
+                    <label>Precio (Lo que se cobra al paciente)</label>
+                    <input type="number" id="labPrecio" value="0" min="0" step="100" oninput="calcularMargenLab()">
+                </div>
+                <div class="form-group">
+                    <label>Costo (Lo que cuesta a la clínica)</label>
+                    <input type="number" id="labCosto" value="0" min="0" step="100" oninput="calcularMargenLab()">
+                </div>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 12px; color: #666; margin-bottom: 4px;">MARGEN DE GANANCIA</div>
+                    <div style="font-size: 24px; font-weight: 700;" id="labMargen">RD$ 0.00</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-cancel" onclick="closeModal('modalOrdenLab')">Cancelar</button>
+                <button class="btn btn-submit" onclick="agregarOrdenLabAFactura()">Agregar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Detalle de Orden de Laboratorio -->
+    <div id="modalDetalleOrdenLab" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <div class="modal-title">🔬 Detalle de Orden de Laboratorio</div>
+            </div>
+            <div class="modal-body">
+                <!-- Información de la orden -->
+                <div id="detalleLabInfo"></div>
+
+                <!-- Timeline -->
+                <div style="margin-top: 20px;">
+                    <h3 style="font-size: 16px; color: #002366; margin-bottom: 15px;">📍 Historial</h3>
+                    <div id="detalleLabTimeline"></div>
+                </div>
+
+                <!-- Botones de acción -->
+                <div id="botonesAvanceLab" style="margin-top: 20px; text-align: center;"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-cancel" onclick="closeModal('modalDetalleOrdenLab')">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- jsPDF para generar PDFs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+
+    <!-- App Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="app.js"></script>
+
+<!-- Modal: Nuevo Paciente -->
+<div id="modalNuevoPaciente" class="modal">
+    <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-header">
+            <div class="modal-title">Nuevo Paciente</div>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Nombre Completo *</label>
+                <input type="text" id="nuevoPacienteNombre">
+            </div>
+            <div class="form-group">
+                <label>Cédula</label>
+                <input type="text" id="nuevoPacienteCedula">
+            </div>
+            <div class="form-group">
+                <label>Teléfono *</label>
+                <input type="tel" id="nuevoPacienteTelefono">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="nuevoPacienteEmail">
+            </div>
+            <div class="form-group">
+                <label>Fecha de Nacimiento</label>
+                <input type="date" id="nuevoPacienteFechaNacimiento">
+            </div>
+
+            <!-- NUEVOS CAMPOS -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                    <label>Sexo</label>
+                    <select id="nuevoPacienteSexo">
+                        <option value="">Seleccionar...</option>
+                        <option value="Masculino">Masculino</option>
+                        <option value="Femenino">Femenino</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Grupo Sanguíneo</label>
+                    <select id="nuevoPacienteGrupoSanguineo">
+                        <option value="">Desconocido</option>
+                        <option value="O+">O+</option>
+                        <option value="O-">O-</option>
+                        <option value="A+">A+</option>
+                        <option value="A-">A-</option>
+                        <option value="B+">B+</option>
+                        <option value="B-">B-</option>
+                        <option value="AB+">AB+</option>
+                        <option value="AB-">AB-</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Dirección</label>
+                <input type="text" id="nuevoPacienteDireccion" placeholder="Calle, número, sector, ciudad">
+            </div>
+
+            <div class="form-group">
+                <label>Alergias</label>
+                <textarea id="nuevoPacienteAlergias" rows="2" placeholder="Penicilina, látex, anestesia, etc."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Seguro Médico</label>
+                <input type="text" id="nuevoPacienteSeguro" placeholder="Nombre del seguro y número de póliza (opcional)">
+            </div>
+
+            <div class="form-group">
+                <label>Contacto de Emergencia (Opcional)</label>
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px;">
+                    <input type="text" id="nuevoPacienteEmergenciaNombre" placeholder="Nombre del contacto">
+                    <input type="tel" id="nuevoPacienteEmergenciaTelefono" placeholder="Teléfono">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>¿Padece de algo? (Condiciones médicas)</label>
+                <textarea id="nuevoPacienteCondiciones" placeholder="Diabetes, hipertensión, etc."></textarea>
+            </div>
+
+            <!-- CONSENTIMIENTO INFORMADO -->
+            <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border: 2px solid #007AFF;">
+                <h3 style="margin: 0 0 15px 0; color: #007AFF; font-size: 18px;">📋 Consentimiento Informado</h3>
+                <p style="font-size: 14px; line-height: 1.6; color: #333; text-align: justify; margin-bottom: 20px;">
+                    Por la presente, declaro que he sido informado de forma clara sobre el diagnóstico, los riesgos, beneficios y alternativas del tratamiento dental propuesto. Autorizo voluntariamente al personal de esta clínica a realizar los procedimientos necesarios, incluyendo la administración de anestesia local si se requiere. Comprendo que la medicina y odontología no son ciencias exactas y no se pueden garantizar resultados específicos, asumiendo mi responsabilidad en el cumplimiento de las indicaciones post-operatorias y asistencias a citas de control.
+                </p>
+
+                <div style="margin-bottom: 10px;">
+                    <label style="font-weight: 600; color: #333;">Firma del Paciente (o Tutor) *</label>
+                    <div style="margin-top: 8px;">
+                        <canvas id="canvasFirma" width="600" height="150" style="border: 2px solid #ddd; border-radius: 8px; background: white; cursor: crosshair; display: block; width: 100%;"></canvas>
+                    </div>
+                    <button type="button" class="btn" onclick="limpiarFirma()" style="margin-top: 10px; background: #ff3b30; color: white; padding: 8px 16px;">🗑️ Limpiar Firma</button>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-cancel" onclick="closeModal('modalNuevoPaciente')">Cancelar</button>
+            <button class="btn btn-save" onclick="guardarPaciente()">Guardar Paciente</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Ver Paciente -->
+<div id="modalVerPaciente" class="modal">
+    <div class="modal-content" style="max-width: 1100px; max-height: 90vh; display: flex; flex-direction: column;">
+        <div class="modal-header" style="background: linear-gradient(135deg, #002366 0%, #004d99 100%); color: white; padding: 24px; border-radius: 12px 12px 0 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <div style="flex: 1;">
+                    <div class="modal-title" id="verPacienteNombre" style="color: white; font-size: 24px; margin-bottom: 4px;"></div>
+                    <div id="verPacienteSubtitulo" style="font-size: 14px; opacity: 0.9;"></div>
+                </div>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <button onclick="editarPacienteActual()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                        ✏️ Editar
+                    </button>
+                    <button onclick="closeModal('modalVerPaciente')" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">✕</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <div style="background: white; border-bottom: 2px solid #e5e5e7; padding: 0 24px; display: flex; gap: 8px;">
+            <button class="paciente-tab active" data-tab="resumen" onclick="cambiarTabPaciente('resumen')" style="border: none; background: none; padding: 16px 20px; cursor: pointer; font-weight: 600; color: #666; border-bottom: 3px solid transparent; transition: all 0.2s;">
+                📊 Resumen
+            </button>
+            <button class="paciente-tab" data-tab="balance" onclick="cambiarTabPaciente('balance')" id="tabBalanceBtn" style="border: none; background: none; padding: 16px 20px; cursor: pointer; font-weight: 600; color: #666; border-bottom: 3px solid transparent; transition: all 0.2s;">
+                💰 Balance
+            </button>
+            <button class="paciente-tab" data-tab="historial" onclick="cambiarTabPaciente('historial')" style="border: none; background: none; padding: 16px 20px; cursor: pointer; font-weight: 600; color: #666; border-bottom: 3px solid transparent; transition: all 0.2s;">
+                📋 Historial
+            </button>
+            <button class="paciente-tab" data-tab="recetas" onclick="cambiarTabPaciente('recetas')" style="border: none; background: none; padding: 16px 20px; cursor: pointer; font-weight: 600; color: #666; border-bottom: 3px solid transparent; transition: all 0.2s;">
+                💊 Recetas
+            </button>
+            <button class="paciente-tab" data-tab="documentos" onclick="cambiarTabPaciente('documentos')" style="border: none; background: none; padding: 16px 20px; cursor: pointer; font-weight: 600; color: #666; border-bottom: 3px solid transparent; transition: all 0.2s;">
+                📄 Documentos
+            </button>
+        </div>
+
+        <!-- Tabs Content -->
+        <div style="flex: 1; overflow-y: auto; padding: 24px;">
+            <!-- Tab: Resumen -->
+            <div id="tabResumen" class="paciente-tab-content active"></div>
+
+            <!-- Tab: Balance -->
+            <div id="tabBalance" class="paciente-tab-content" style="display: none;"></div>
+
+            <!-- Tab: Historial -->
+            <div id="tabHistorial" class="paciente-tab-content" style="display: none;"></div>
+
+            <!-- Tab: Recetas -->
+            <div id="tabRecetas" class="paciente-tab-content" style="display: none;"></div>
+
+            <!-- Tab: Documentos -->
+            <div id="tabDocumentos" class="paciente-tab-content" style="display: none;"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+.paciente-tab.active {
+    color: #007AFF !important;
+    border-bottom-color: #007AFF !important;
+}
+
+.paciente-tab:hover {
+    background: #f5f5f5;
+}
+
+.paciente-tab-content {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
+
+<!-- Modal: Firmar Consentimiento Informado -->
+<!-- Modal: Editar Paciente -->
+<div id="modalEditarPaciente" class="modal">
+    <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-header">
+            <div class="modal-title">✏️ Editar Paciente</div>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Nombre Completo *</label>
+                <input type="text" id="editPacienteNombre" placeholder="Nombre completo">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group">
+                    <label>Teléfono *</label>
+                    <input type="tel" id="editPacienteTelefono" placeholder="809-555-1234">
+                </div>
+                <div class="form-group">
+                    <label>Cédula</label>
+                    <input type="text" id="editPacienteCedula" placeholder="001-1234567-8">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="editPacienteEmail" placeholder="correo@ejemplo.com">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                <div class="form-group">
+                    <label>Fecha de Nacimiento</label>
+                    <input type="date" id="editPacienteFechaNac">
+                </div>
+                <div class="form-group">
+                    <label>Sexo</label>
+                    <select id="editPacienteSexo">
+                        <option value="">Seleccione...</option>
+                        <option value="M">Masculino</option>
+                        <option value="F">Femenino</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Grupo Sanguíneo</label>
+                    <input type="text" id="editPacienteGrupoSang" placeholder="O+, A-, etc.">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Dirección</label>
+                <input type="text" id="editPacienteDireccion" placeholder="Calle, sector, ciudad">
+            </div>
+            <div class="form-group">
+                <label>Alergias</label>
+                <textarea id="editPacienteAlergias" rows="2" placeholder="Penicilina, mariscos, etc."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Condiciones Médicas</label>
+                <textarea id="editPacienteCondiciones" rows="2" placeholder="Diabetes, hipertensión, etc."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Seguro Médico</label>
+                <input type="text" id="editPacienteSeguro" placeholder="Nombre del seguro">
+            </div>
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                <h4 style="margin: 0 0 12px 0; font-size: 14px; color: #002366;">Contacto de Emergencia</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group" style="margin: 0;">
+                        <label>Nombre</label>
+                        <input type="text" id="editPacienteContactoNombre" placeholder="Nombre del contacto">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label>Teléfono</label>
+                        <input type="tel" id="editPacienteContactoTel" placeholder="809-555-9999">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-cancel" onclick="closeModal('modalEditarPaciente')">Cancelar</button>
+            <button class="btn btn-submit" onclick="guardarEdicionPaciente()">💾 Guardar Cambios</button>
+        </div>
+    </div>
+</div>
+
+<div id="modalConsentimiento" class="modal">
+    <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-header">
+            <div class="modal-title">📋 Consentimiento Informado</div>
+        </div>
+        <div class="modal-body">
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <div style="font-size: 12px; color: #666; margin-bottom: 4px;">Paciente:</div>
+                <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;" id="consentimientoNombre"></div>
+                <div style="font-size: 14px; color: #666;">Cédula: <span id="consentimientoCedula"></span></div>
+            </div>
+
+            <div style="background: white; padding: 20px; border: 2px solid #007AFF; border-radius: 8px; margin-bottom: 20px;">
+                <h3 style="color: #002366; margin-bottom: 15px;">Consentimiento Informado</h3>
+                <div style="font-size: 13px; line-height: 1.6; color: #1d1d1f; text-align: justify;">
+                    <p style="margin-bottom: 10px;">
+                        He sido informado sobre mi diagnóstico, tratamiento propuesto, riesgos, beneficios y alternativas. <strong>Autorizo voluntariamente</strong> los procedimientos odontológicos necesarios, incluyendo anestesia local.
+                    </p>
+                    <p style="margin-bottom: 10px;">
+                        Entiendo que la odontología no garantiza resultados específicos y que pueden existir riesgos (dolor, inflamación, sangrado, infección). <strong>Me comprometo</strong> a seguir indicaciones médicas y asistir a controles.
+                    </p>
+                    <p style="margin-bottom: 0;">
+                        Autorizo el uso de registros clínicos y radiografías para tratamiento, protegidos según Ley 172-13 de Protección de Datos. Puedo revocar este consentimiento antes del procedimiento.
+                    </p>
+                </div>
+            </div>
+
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <div style="font-size: 14px; color: #666; font-weight: 600;">Firma del Paciente (o Tutor):</div>
+                    <button class="btn btn-secondary" onclick="limpiarFirma()" style="padding: 8px 16px;">🗑️ Limpiar</button>
+                </div>
+                <canvas id="signatureCanvas" width="600" height="200" style="border: 2px solid #ddd; border-radius: 8px; background: white; width: 100%; cursor: crosshair;"></canvas>
+                <div style="font-size: 12px; color: #999; margin-top: 8px; text-align: center;">
+                    Firme en el recuadro con el mouse o dedo (en dispositivos táctiles)
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-cancel" onclick="closeModal('modalConsentimiento')">Cancelar</button>
+            <button class="btn btn-submit" onclick="guardarConsentimiento()">💾 Guardar Consentimiento</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Ver Firma del Consentimiento -->
+<div id="modalVerFirma" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <div class="modal-title">📋 Consentimiento Informado</div>
+        </div>
+        <div class="modal-body">
+            <div id="verFirmaContenido"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-cancel" onclick="closeModal('modalVerFirma')">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Nueva Cita -->
+<div id="modalNuevaCita" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title">Nueva Cita</div>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Paciente *</label>
+                <input type="text" id="citaPacienteInput" placeholder="Escribe para buscar..." oninput="buscarPaciente()" autocomplete="off">
+                <div id="citaPacienteSuggestions" style="display: none; position: absolute; background: white; border: 1px solid #e5e5e7; border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 1000; width: calc(100% - 40px); margin-top: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></div>
+            </div>
+            <div class="form-group">
+                <label>Profesional *</label>
+                <select id="citaProfesional"></select>
+            </div>
+            <div class="form-group">
+                <label>Fecha *</label>
+                <input type="date" id="citaFecha">
+            </div>
+            <div class="form-group">
+                <label>Hora Inicio *</label>
+                <input type="time" id="citaHora" onchange="actualizarHoraFin()">
+            </div>
+            <div class="form-group">
+                <label>Hora Fin *</label>
+                <input type="time" id="citaHoraFin">
+            </div>
+            <div class="form-group">
+                <label>Consultorio *</label>
+                <select id="citaConsultorio">
+                    <option value="1">Consultorio 1</option>
+                    <option value="2">Consultorio 2</option>
+                    <option value="3">Consultorio 3</option>
+                    <option value="4">Consultorio 4</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Motivo *</label>
+                <input type="text" id="citaMotivo" placeholder="Ej: Limpieza, Revisión">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-cancel" onclick="closeModal('modalNuevaCita')">Cancelar</button>
+            <button class="btn btn-save" onclick="guardarCita()">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Detalle de Cita -->
+<div id="modalDetalleCita" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title">Detalle de la Cita</div>
+        </div>
+        <div class="modal-body">
+            <div id="detalleCitaContent"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="cancelarCita()" style="background: #ff3b30; color: white;">🗑️ Cancelar Cita</button>
+            <button class="btn btn-cancel" onclick="closeModal('modalDetalleCita')">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Nueva Orden de Laboratorio -->
+<div id="modalNuevaOrden" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title">Orden de Laboratorio</div>
+        </div>
+        <div class="modal-body">
+            <!-- Modo: Desde factura (info de paciente oculta, se toma de la factura) -->
+            <div id="ordenDesdeFactura" style="display: none;">
+                <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+                    <div style="font-size: 12px; color: #666;">Paciente:</div>
+                    <div style="font-size: 16px; font-weight: 600;" id="ordenPacienteNombre"></div>
+                    <div style="font-size: 12px; color: #666; margin-top: 4px;">Doctor:</div>
+                    <div style="font-size: 14px; font-weight: 600;" id="ordenProfesionalNombre"></div>
+                </div>
+            </div>
+
+            <!-- Modo: Directa (con búsqueda de paciente y selección de doctor) -->
+            <div id="ordenDirecta" style="display: none;">
+                <div class="form-group">
+                    <label>Paciente *</label>
+                    <input type="text" id="ordenPacienteInput" placeholder="Escribe para buscar..." oninput="buscarPacienteOrden()" autocomplete="off">
+                    <div id="ordenPacienteSuggestions" style="display: none; position: absolute; background: white; border: 1px solid #e5e5e7; border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 1000; width: calc(100% - 40px); margin-top: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></div>
+                </div>
+                <div class="form-group">
+                    <label>Doctor *</label>
+                    <select id="ordenProfesionalSelect">
+                        <option value="">Seleccione doctor</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Tipo de Trabajo *</label>
+                <select id="ordenTipo">
+                    <option value="">Seleccione tipo</option>
+                    <option value="Corona">Corona</option>
+                    <option value="Puente">Puente</option>
+                    <option value="Prótesis Parcial">Prótesis Parcial</option>
+                    <option value="Prótesis Total">Prótesis Total</option>
+                    <option value="Placa de Relajación">Placa de Relajación</option>
+                    <option value="Ortodoncia">Ortodoncia</option>
+                    <option value="Otro">Otro</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Descripción/Indicaciones *</label>
+                <textarea id="ordenDescripcion" rows="4" placeholder="Ej: Corona de porcelana sobre metal, pieza 16, color A2"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Laboratorio</label>
+                <input type="text" id="ordenLaboratorio" placeholder="Nombre del laboratorio">
+            </div>
+            <div class="form-group">
+                <label>Precio a Cobrar al Paciente *</label>
+                <input type="number" id="ordenPrecio" placeholder="0" min="0" step="100">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-cancel" onclick="closeModal('modalNuevaOrden')">Cancelar</button>
+            <button class="btn btn-save" id="btnGuardarOrden">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Detalle Orden Laboratorio -->
+<div id="modalDetalleOrdenLab" class="modal">
+    <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-header">
+            <div class="modal-title">Detalle de Trabajo de Laboratorio</div>
+        </div>
+        <div class="modal-body" id="detalleOrdenLabContent">
+        </div>
+        <div class="modal-footer" id="detalleOrdenLabFooter">
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Editar Orden -->
+<div id="modalEditarOrden" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title">Editar Orden de Laboratorio</div>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Descripción/Indicaciones</label>
+                <textarea id="editOrdenDescripcion" rows="4"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Laboratorio</label>
+                <input type="text" id="editOrdenLaboratorio">
+            </div>
+            <div class="form-group">
+                <label>Precio</label>
+                <input type="number" id="editOrdenPrecio" min="0" step="100">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-cancel" onclick="closeModal('modalEditarOrden')">Cancelar</button>
+            <button class="btn btn-save" onclick="guardarEdicionOrden()">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Cancelar Factura -->
+<div id="modalCancelarFactura" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title">Cancelar Factura</div>
+        </div>
+        <div class="modal-body">
+            <div style="background: #fff3cd; padding: 12px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #ff9500;">
+                <strong>⚠️ Advertencia:</strong> Esta acción cancelará la factura permanentemente.
+            </div>
+            <div class="form-group">
+                <label>Razón de Cancelación *</label>
+                <textarea id="razonCancelacion" rows="4" placeholder="Explique por qué se cancela esta factura"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-cancel" onclick="closeModal('modalCancelarFactura')">Volver</button>
+            <button class="btn" style="background: #ff3b30; color: white;" onclick="confirmarCancelacionFactura()">Cancelar Factura</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Reversar Cobro -->
+<div id="modalReversarCobro" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title">Reversar Cobro</div>
+        </div>
+        <div class="modal-body">
+            <div style="background: #ffe5e5; padding: 12px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #ff3b30;">
+                <strong>⚠️ Acción Crítica:</strong> Esto revertirá un pago ya registrado.
+            </div>
+            <div id="detalleCobroReversion" style="background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 20px;"></div>
+            <div class="form-group">
+                <label>Justificación del Reversamiento *</label>
+                <textarea id="justificacionReversion" rows="4" placeholder="Explique detalladamente por qué se revierte este cobro (esta información será visible para el administrador)"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-cancel" onclick="closeModal('modalReversarCobro')">Cancelar</button>
+            <button class="btn" style="background: #ff3b30; color: white;" onclick="confirmarReversionCobro()">Reversar Cobro</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Registrar Abono -->
+<div id="modalAbonoLab" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title">Registrar Abono al Laboratorio</div>
+        </div>
+        <div class="modal-body">
+            <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+                <div style="font-size: 14px; font-weight: 600;" id="abonoOrdenInfo"></div>
+                <div style="font-size: 13px; color: #666; margin-top: 4px;" id="abonoSaldoActual"></div>
+            </div>
+            <div class="form-group">
+                <label>Monto del Abono *</label>
+                <input type="number" id="abonoMonto" placeholder="0" min="0" step="100">
+            </div>
+            <div class="form-group">
+                <label>Fecha del Abono</label>
+                <input type="date" id="abonoFecha">
+            </div>
+            <div class="form-group">
+                <label>Notas</label>
+                <textarea id="abonoNotas" rows="2" placeholder="Opcional"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-cancel" onclick="closeModal('modalAbonoLab')">Cancelar</button>
+            <button class="btn btn-save" onclick="guardarAbonoLab()">Registrar Abono</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Galería de Placas -->
+<div id="modalGaleriaPlacas" class="modal">
+    <div class="modal-content" style="max-width: 1200px;">
+        <div class="modal-header">
+            <div class="modal-title">🦷 Galería de Placas Radiográficas</div>
+            <div style="font-size: 14px; color: #666; margin-top: 4px;" id="galeriaPacienteNombre"></div>
+        </div>
+        <div class="modal-body">
+            <div style="margin-bottom: 20px;">
+                <button class="btn btn-submit" onclick="abrirSubirPlaca()" style="width: 100%;">
+                    📤 Subir Nueva Placa
+                </button>
+            </div>
+            <div id="galeriaPlacasContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-cancel" onclick="closeModal('modalGaleriaPlacas')">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Subir Placa -->
+<div id="modalSubirPlaca" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title">📤 Subir Nueva Placa</div>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Tipo de Placa *</label>
+                <select id="placaTipo">
+                    <option value="Periapical">Periapical</option>
+                    <option value="Bite-wing">Bite-wing</option>
+                    <option value="Panorámica">Panorámica</option>
+                    <option value="Cefalométrica">Cefalométrica</option>
+                    <option value="Oclusal">Oclusal</option>
+                    <option value="Cone Beam">Cone Beam (CBCT)</option>
+                    <option value="Otra">Otra</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Notas / Observaciones</label>
+                <textarea id="placaNotas" rows="3" placeholder="Describe hallazgos, tratamiento, etc."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Imagen *</label>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <input type="file" id="placaInput" accept="image/*" onchange="previsualizarPlaca()" style="display: none;">
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('placaInput').click()" style="width: 100%; padding: 15px; font-size: 16px;">
+                        📁 Seleccionar Imagen
+                    </button>
+                    <div id="placaNombreArchivo" style="font-size: 13px; color: #666; text-align: center;"></div>
+                </div>
+            </div>
+            <div class="form-group">
+                <img id="placaPreview" class="hidden" style="max-width: 100%; border-radius: 8px; border: 2px solid #e5e5e7;">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-cancel" onclick="closeModal('modalSubirPlaca')">Cancelar</button>
+            <button class="btn btn-submit" onclick="guardarPlaca()">💾 Guardar Placa</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Ver Placa Fullscreen -->
+<div id="modalPlacaFullscreen" class="modal">
+    <div class="modal-content" style="max-width: 95vw; max-height: 95vh; padding: 0; overflow: hidden;">
+        <div style="display: flex; flex-direction: column; height: 95vh;">
+            <div style="background: #002366; color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-size: 20px; font-weight: 700; margin-bottom: 4px;" id="fullscreenPlacaTipo"></div>
+                    <div style="font-size: 14px; opacity: 0.9;" id="fullscreenPlacaFecha"></div>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-secondary" onclick="descargarPlaca()" style="background: white; color: #002366;">
+                        💾 Descargar
+                    </button>
+                    <button class="btn btn-cancel" onclick="closeModal('modalPlacaFullscreen')" style="background: rgba(255,255,255,0.2); color: white;">
+                        ✕ Cerrar
+                    </button>
+                </div>
+            </div>
+            <div style="flex: 1; overflow: auto; background: #1a1a1a; display: flex; align-items: center; justify-content: center; padding: 20px;">
+                <img id="fullscreenPlacaImagen" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+            </div>
+            <div style="background: #f8f9fa; padding: 20px; border-top: 2px solid #e0e0e0;">
+                <div style="font-size: 12px; color: #666; font-weight: 600; margin-bottom: 8px;">NOTAS / OBSERVACIONES:</div>
+                <div style="font-size: 14px; color: #333; line-height: 1.6;" id="fullscreenPlacaNotas"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Editar Placa -->
+<div id="modalEditarPlaca" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title">✏️ Editar Placa</div>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editPlacaId">
+            <div class="form-group">
+                <label>Tipo de Placa *</label>
+                <select id="editPlacaTipo">
+                    <option value="Periapical">Periapical</option>
+                    <option value="Bite-wing">Bite-wing</option>
+                    <option value="Panorámica">Panorámica</option>
+                    <option value="Cefalométrica">Cefalométrica</option>
+                    <option value="Oclusal">Oclusal</option>
+                    <option value="Cone Beam">Cone Beam (CBCT)</option>
+                    <option value="Otra">Otra</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Notas / Observaciones</label>
+                <textarea id="editPlacaNotas" rows="4" placeholder="Describe hallazgos, tratamiento, etc."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-cancel" onclick="closeModal('modalEditarPlaca')">Cancelar</button>
+            <button class="btn btn-submit" onclick="guardarEdicionPlaca()">💾 Guardar Cambios</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Recetas Médicas (Vista completa) -->
+<div id="modalRecetasMedicas" class="modal">
+    <div class="modal-content" style="max-width: 900px;">
+        <div class="modal-header">
+            <div class="modal-title">💊 Recetas Médicas</div>
+            <div style="font-size: 14px; color: #666; margin-top: 4px;" id="recetasPacienteNombre"></div>
+        </div>
+        <div class="modal-body">
+            <button class="btn btn-submit" onclick="abrirNuevaReceta()" style="width: 100%; margin-bottom: 20px;">
+                ➕ Nueva Receta
+            </button>
+            <div id="listaRecetas"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-cancel" onclick="closeModal('modalRecetasMedicas')">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Nueva Receta -->
+<div id="modalNuevaReceta" class="modal">
+    <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-header">
+            <div class="modal-title">➕ Nueva Receta Médica</div>
+        </div>
+        <div class="modal-body">
+            <!-- Diagnóstico -->
+            <div class="form-group">
+                <label>Diagnóstico (Opcional)</label>
+                <textarea id="recetaDiagnostico" rows="2" placeholder="Describe el diagnóstico o condición del paciente"></textarea>
+            </div>
+
+            <!-- Medicamentos -->
+            <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+                <h4 style="font-size: 14px; color: #002366; margin-bottom: 12px;">💊 Medicamentos</h4>
+
+                <div class="form-group">
+                    <label>Nombre del Medicamento *</label>
+                    <input type="text" id="medNombre" placeholder="Ej: Ibuprofeno 400mg">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="form-group">
+                        <label>Dosis *</label>
+                        <input type="text" id="medDosis" placeholder="Ej: 1 tableta">
+                    </div>
+                    <div class="form-group">
+                        <label>Frecuencia *</label>
+                        <input type="text" id="medFrecuencia" placeholder="Ej: Cada 8 horas">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Duración (Opcional)</label>
+                    <input type="text" id="medDuracion" placeholder="Ej: 7 días">
+                </div>
+
+                <button class="btn btn-secondary" onclick="agregarMedicamento()" style="width: 100%;">
+                    ➕ Agregar Medicamento
+                </button>
+
+                <div id="medicamentosListaTemp" style="margin-top: 16px;"></div>
+            </div>
+
+            <!-- Indicaciones -->
+            <div class="form-group">
+                <label>Indicaciones Generales (Opcional)</label>
+                <textarea id="recetaIndicaciones" rows="3" placeholder="Instrucciones adicionales, precauciones, recomendaciones..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-cancel" onclick="closeModal('modalNuevaReceta')">Cancelar</button>
+            <button class="btn btn-submit" onclick="guardarReceta()">💾 Guardar Receta</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Auditoría (Solo Admin) -->
+<div id="modalAuditoria" class="modal">
+    <div class="modal-content" style="max-width: 900px;">
+        <div class="modal-header">
+            <div class="modal-title">📋 Historial de Auditoría</div>
+        </div>
+        <div class="modal-body">
+            <div style="background: #fff3cd; padding: 12px; border-radius: 8px; margin-bottom: 20px; border-left: 3px solid #ffc107;">
+                <div style="font-size: 13px; color: #856404;">
+                    🔒 Este historial registra todas las acciones importantes del sistema: eliminaciones, modificaciones y accesos a información sensible.
+                </div>
+            </div>
+            <div id="listaAuditoria"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-cancel" onclick="closeModal('modalAuditoria')">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Confirmación Inteligente -->
+<div id="modalConfirmacion" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header" id="confirmacionHeader">
+            <div class="modal-title" id="confirmacionTitulo"></div>
+        </div>
+        <div class="modal-body">
+            <div id="confirmacionMensaje" style="line-height: 1.6; color: #333;"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-cancel" onclick="cerrarConfirmacion()">Cancelar</button>
+            <button class="btn" id="confirmacionBtnConfirmar" onclick="ejecutarConfirmacion()">Confirmar</button>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
