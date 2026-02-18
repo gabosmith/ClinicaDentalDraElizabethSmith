@@ -109,91 +109,68 @@ function updateLocalCache() {
     }
 }
 
-// Save data to Firebase
+// ========================================
+// GUARDADO INTELIGENTE - Solo guarda lo que cambió
+// ========================================
+
+// Guarda solo datos principales (citas, facturas, gastos, etc.) - NUNCA los pacientes
+async function saveMainData() {
+    try {
+        await db.collection('clinicaData-dev').doc('main').update({
+            facturas: appData.facturas,
+            personal: appData.personal,
+            gastos: appData.gastos,
+            avances: appData.avances,
+            cuadresDiarios: appData.cuadresDiarios || {},
+            citas: appData.citas || [],
+            laboratorios: appData.laboratorios || [],
+            reversiones: appData.reversiones || [],
+            auditLogs: appData.auditLogs || [],
+            lastUpdated: new Date().toISOString(),
+            usaSubcollectionPacientes: true
+        });
+        updateLocalCache();
+        showSyncIndicator();
+    } catch (error) {
+        console.error('❌ Error guardando datos principales:', error);
+        alert('❌ Error al guardar. Intenta de nuevo.');
+    }
+}
+
+// Guarda un solo paciente en su documento individual
+async function savePaciente(paciente) {
+    if (!paciente || !paciente.id) return;
+    try {
+        await db.collection('pacientes').doc(paciente.id).set(paciente);
+        updateLocalCache();
+        showSyncIndicator();
+    } catch (error) {
+        console.error('❌ Error guardando paciente:', error);
+        alert('❌ Error al guardar paciente. Intenta de nuevo.');
+    }
+}
+
+// saveData completo - solo para inicialización
 async function saveData() {
     try {
-        console.log(`💾 Guardando datos en Firebase...`);
-        console.log(`📊 Pacientes a guardar: ${appData.pacientes.length}`);
-
-        // Calcular tamaño ANTES de guardar
-        const dataSize = new Blob([JSON.stringify(appData)]).size;
-        const sizeMB = (dataSize / (1024 * 1024)).toFixed(2);
-        console.log(`📏 Tamaño total de datos: ${sizeMB} MB`);
-
-        // Si hay muchos pacientes, guardarlos en subcollection
-        if (appData.pacientes.length > 100) {
-            console.log(`⚠️ Muchos pacientes (${appData.pacientes.length}). Usando subcollection...`);
-
-            // Guardar datos principales SIN pacientes
-            await db.collection('clinicaData-dev').doc('main').set({
-                facturas: appData.facturas,
-                personal: appData.personal,
-                gastos: appData.gastos,
-                avances: appData.avances,
-                cuadresDiarios: appData.cuadresDiarios || {},
-                pacientes: [], // Vacío - se guarda en subcollection
-                citas: appData.citas || [],
-                laboratorios: appData.laboratorios || [],
-                reversiones: appData.reversiones || [],
-                auditLogs: appData.auditLogs || [],
-                lastUpdated: new Date().toISOString(),
-                usaSubcollectionPacientes: true // Flag para saber que usa subcollection
-            });
-
-            console.log(`✅ Datos principales guardados`);
-            console.log(`💾 Guardando ${appData.pacientes.length} pacientes en subcollection...`);
-
-            // Guardar pacientes en lotes de 500 (límite de batch de Firebase)
-            const BATCH_SIZE = 500;
-
-            for (let i = 0; i < appData.pacientes.length; i += BATCH_SIZE) {
-                const batch = db.batch(); // Crear nuevo batch para cada lote
-                const lote = appData.pacientes.slice(i, Math.min(i + BATCH_SIZE, appData.pacientes.length));
-
-                lote.forEach(paciente => {
-                    const docRef = db.collection('clinicaData-dev').doc('main')
-                        .collection('pacientes').doc(paciente.id);
-                    batch.set(docRef, paciente);
-                });
-
-                await batch.commit();
-                console.log(`✅ Guardados ${Math.min(i + BATCH_SIZE, appData.pacientes.length)}/${appData.pacientes.length} pacientes`);
-            }
-
-            console.log(`✅ Todos los pacientes guardados en subcollection`);
-        } else {
-            // Pocos pacientes, guardar normalmente
-            await db.collection('clinicaData-dev').doc('main').set({
-                facturas: appData.facturas,
-                personal: appData.personal,
-                gastos: appData.gastos,
-                avances: appData.avances,
-                cuadresDiarios: appData.cuadresDiarios || {},
-                pacientes: appData.pacientes || [],
-                citas: appData.citas || [],
-                laboratorios: appData.laboratorios || [],
-                reversiones: appData.reversiones || [],
-                auditLogs: appData.auditLogs || [],
-                lastUpdated: new Date().toISOString()
-            });
-        }
-
-        console.log(`✅ Datos guardados exitosamente en Firebase`);
-
-        // Actualizar caché local
+        await db.collection('clinicaData-dev').doc('main').set({
+            facturas: appData.facturas,
+            personal: appData.personal,
+            gastos: appData.gastos,
+            avances: appData.avances,
+            cuadresDiarios: appData.cuadresDiarios || {},
+            citas: appData.citas || [],
+            laboratorios: appData.laboratorios || [],
+            reversiones: appData.reversiones || [],
+            auditLogs: appData.auditLogs || [],
+            lastUpdated: new Date().toISOString(),
+            usaSubcollectionPacientes: true
+        });
         updateLocalCache();
-
         showSyncIndicator();
     } catch (error) {
         console.error('❌ ERROR CRÍTICO guardando en Firebase:', error);
-        console.error('Código de error:', error.code);
-        console.error('Mensaje:', error.message);
-
-        // MOSTRAR ALERTA AL USUARIO
-        alert(`❌ ERROR AL GUARDAR EN FIREBASE\n\n` +
-              `Error: ${error.code}\n` +
-              `Mensaje: ${error.message}\n\n` +
-              `Los datos NO se guardaron. Revisa la configuración de Firebase.`);
+        alert(`❌ ERROR AL GUARDAR EN FIREBASE\n\nError: ${error.code}\nMensaje: ${error.message}`);
     }
 }
 
@@ -735,7 +712,7 @@ async function generarFactura() {
     // Crear órdenes de laboratorio vinculadas a esta factura
     await crearOrdenesLabDesdeFactura(factura);
 
-    await saveData();
+    await saveMainData();
 
     const mensaje = citaHoy
         ? `✅ Factura generada exitosamente\n\n✔️ Vinculada con cita de las ${citaHoy.hora}\n✔️ Cita marcada como Completada`
@@ -955,7 +932,7 @@ function confirmarPago() {
         currentFacturaToPay.estado = 'partial';
     }
 
-    saveData();
+    saveMainData();
 
     // Generar factura para cliente
     generarFacturaCliente(currentFacturaToPay, monto, metodo);
@@ -1391,7 +1368,7 @@ function guardarCuadreDiario(fechaTimestamp, cuadre) {
         return; // Sin cambios, no guardar
     }
     appData.cuadresDiarios[fechaTimestamp] = cuadre;
-    saveData();
+    saveMainData();
 }
 
 // Mostrar historial de última semana
@@ -1484,7 +1461,7 @@ function registrarGasto() {
     };
 
     appData.gastos.push(gasto);
-    saveData();
+    saveMainData();
     updateGastosTab();
     closeModal('modalAddGasto');
     alert('Gasto registrado exitosamente');
@@ -1523,7 +1500,7 @@ function eliminarGasto(id) {
 
     if (confirm(`🗑️ ¿Eliminar gasto?\n\n${gasto.descripcion}\nMonto: ${formatCurrency(gasto.monto)}\n${gasto.proveedor ? `Proveedor: ${gasto.proveedor}\n` : ''}\nEsta acción no se puede deshacer.`)) {
         appData.gastos = appData.gastos.filter(g => g.id !== id);
-        saveData();
+        saveMainData();
         updateGastosTab();
     }
 }
@@ -1580,7 +1557,7 @@ function agregarPersonal() {
     };
 
     appData.personal.push(person);
-    saveData();
+    saveMainData();
     updatePersonalTab();
     updateProfessionalPicker();
     closeModal('modalAddPersonal');
@@ -1831,7 +1808,7 @@ Firma: _____________________
             currentReciboText = recibo;
             document.getElementById('reciboContent').textContent = recibo;
 
-            saveData();
+            saveMainData();
             closeModal('modalPersonalDetail');
             openModal('modalRecibo');
 
@@ -1905,7 +1882,7 @@ Firma: _____________________
     currentReciboText = recibo;
     document.getElementById('reciboContent').textContent = recibo;
 
-    saveData();
+    saveMainData();
     closeModal('modalPersonalDetail');
     openModal('modalRecibo');
 
@@ -1981,7 +1958,7 @@ function guardarEdicion() {
         if (payDate) currentPersonalToEdit.nextPayDate = new Date(payDate).toISOString();
     }
 
-    saveData();
+    saveMainData();
     updatePersonalTab();
     updateProfessionalPicker();
     closeModal('modalEditPersonal');
@@ -2026,7 +2003,7 @@ function registrarAvance() {
     };
 
     appData.avances.push(avance);
-    saveData();
+    saveMainData();
     closeModal('modalAvance');
     updatePersonalTab();
     alert('Avance registrado exitosamente');
@@ -2095,7 +2072,7 @@ function eliminarPersonal(id) {
             appData.personal = appData.personal.filter(p => p.id !== id);
             // Limpiar avances huérfanos
             appData.avances = appData.avances.filter(a => a.personalId !== id);
-            saveData();
+            saveMainData();
             closeModal('modalPersonalDetail');
             closeModal('modalEditPersonal');
             updatePersonalTab();
@@ -2248,7 +2225,7 @@ function eliminarFactura(facturaId) {
             );
 
             appData.facturas = appData.facturas.filter(f => f.id !== facturaId);
-            saveData();
+            saveMainData();
             updateCobrarTab();
             alert('✅ Factura eliminada correctamente');
         }
@@ -2326,7 +2303,7 @@ function confirmarReversion() {
     appData.reversiones.push(reversion);
 
     // Guardar cambios
-    saveData();
+    saveMainData();
     updateCobrarTab();
     closeModal('modalReversarCobro');
 
@@ -2432,7 +2409,7 @@ async function guardarPaciente() {
     };
 
     appData.pacientes.push(paciente);
-    await saveData();
+    await savePaciente(paciente);
     closeModal('modalNuevoPaciente');
     updatePacientesTab();
 
@@ -3272,7 +3249,7 @@ async function guardarCita() {
     };
 
     appData.citas.push(cita);
-    await saveData();
+    await saveMainData();
     closeModal('modalNuevaCita');
     updateAgendaTab();
     alert('✅ Cita creada exitosamente');
@@ -3442,7 +3419,7 @@ async function crearOrdenesLabDesdeFactura(factura) {
     tempOrdenesLab = [];
     updateListaOrdenesLabTemp();
 
-    await saveData();
+    await saveMainData();
 }
 
 function updateLaboratorioTab() {
@@ -3721,7 +3698,7 @@ async function avanzarEstadoLab(nuevoEstado) {
 
     orden.estadoActual = nuevoEstado;
 
-    await saveData();
+    await saveMainData();
 
     verDetalleOrdenLab(orden.id);
     updateLaboratorioTab();
@@ -3819,7 +3796,7 @@ async function cambiarEstadoCita(citaId, nuevoEstado) {
         }
     }
 
-    await saveData();
+    await saveMainData();
     updateAgendaTab();
     closeModal('modalDetalleCita');
 
@@ -3837,7 +3814,7 @@ function inicializarEstadosCitas() {
     });
     if (actualizadas > 0) {
         console.log(`✅ ${actualizadas} citas actualizadas con estado inicial`);
-        saveData();
+        saveMainData();
     }
 }
 
@@ -4015,7 +3992,7 @@ async function guardarConsentimiento() {
         firmaBase64: firmaBase64
     };
 
-    await saveData();
+    await savePaciente(currentPacienteConsentimiento);
     closeModal('modalConsentimiento');
     updatePacientesTab();
 
@@ -4246,7 +4223,7 @@ async function limpiarDatosAntiguos() {
     });
 
     if (cambios > 0) {
-        await saveData();
+        await saveMainData();
         updateProfessionalPicker();
         updateReceptionPicker();
     }
@@ -4438,7 +4415,7 @@ async function guardarPlaca() {
 
         currentPacienteGaleria.placas.push(placa);
 
-        await saveData();
+        await savePaciente(currentPacienteGaleria);
 
         // Quitar loading
         document.body.removeChild(loadingMsg);
@@ -4486,7 +4463,7 @@ async function guardarPlaca() {
                 }
 
                 currentPacienteGaleria.placas.push(placa);
-                await saveData();
+                await savePaciente(currentPacienteGaleria);
 
                 closeModal('modalSubirPlaca');
                 renderizarGaleriaPlacas();
@@ -4551,7 +4528,7 @@ async function guardarEdicionPlaca() {
     placa.ultimaModificacion = new Date().toISOString();
     placa.modificadoPor = appData.currentUser;
 
-    await saveData();
+    await savePaciente(currentPacienteGaleria);
 
     closeModal('modalEditarPlaca');
     renderizarGaleriaPlacas();
@@ -4581,7 +4558,7 @@ async function eliminarPlaca(placaId) {
         // Eliminar de Firestore
         currentPacienteGaleria.placas = currentPacienteGaleria.placas.filter(p => p.id !== placaId);
 
-        await saveData();
+        await savePaciente(currentPacienteGaleria);
         renderizarGaleriaPlacas();
 
         alert('✅ Placa eliminada exitosamente');
@@ -4792,7 +4769,7 @@ async function guardarReceta() {
 
     currentPacienteRecetas.recetas.push(receta);
 
-    await saveData();
+    await savePaciente(currentPacienteRecetas);
 
     closeModal('modalNuevaReceta');
     renderizarRecetas();
@@ -4995,7 +4972,7 @@ function registrarAuditoria(accion, tipo, detalles) {
     }
 
     appData.auditLogs.push(log);
-    saveData();
+    saveMainData();
 
     console.log('📝 Auditoría:', log);
 }
@@ -5384,7 +5361,7 @@ function guardarZonaHoraria() {
     }
 
     appData.settings.timezone = timezone;
-    saveData();
+    saveMainData();
 
     console.log('✅ Zona horaria guardada:', timezone);
     alert('✅ Zona horaria actualizada correctamente');
@@ -6301,7 +6278,7 @@ function guardarEdicionPaciente() {
         return;
     }
 
-    saveData();
+    savePaciente(paciente);
     updatePacientesTab();
     closeModal('modalEditarPaciente');
 
@@ -6355,7 +6332,7 @@ function cancelarCita() {
         confirmText: 'Sí, Cancelar Cita',
         onConfirm: () => {
             cita.estado = 'Cancelada';
-            saveData();
+            saveMainData();
             closeModal('modalDetalleCita');
             updateAgendaTab();
             alert('✅ Cita cancelada');
