@@ -19,9 +19,29 @@
             background: #f5f5f7;
             color: #1d1d1f;
             overflow-x: hidden;
-            padding-top: 0;
+            padding-top: 40px; /* Espacio para banner de desarrollo */
         }
 
+        /* Banner de Desarrollo */
+        .dev-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%);
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-weight: 700;
+            z-index: 99999;
+            font-size: 14px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            letter-spacing: 0.5px;
+        }
+
+        .dev-banner::before {
+            content: "🔧 ";
+        }
 
         /* Login Screen */
         .login-screen {
@@ -1697,6 +1717,9 @@
                 <div style="display: flex; gap: 12px; align-items: center;">
                     <button onclick="editarPacienteActual()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
                         ✏️ Editar
+                    </button>
+                    <button id="btnEliminarPaciente" onclick="eliminarPacienteActual()" style="background: rgba(220,53,69,0.7); border: 1px solid rgba(220,53,69,0.9); color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; display: none; align-items: center; gap: 6px; transition: all 0.2s;" onmouseover="this.style.background='rgba(220,53,69,0.9)'" onmouseout="this.style.background='rgba(220,53,69,0.7)'">
+                        🗑️ Eliminar
                     </button>
                     <button onclick="closeModal('modalVerPaciente')" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">✕</button>
                 </div>

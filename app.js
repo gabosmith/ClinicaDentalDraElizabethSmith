@@ -2507,7 +2507,74 @@ function verPaciente(pacienteId) {
     // Activar primer tab
     cambiarTabPaciente('resumen');
 
+    // Mostrar/ocultar botón eliminar según rol
+    const btnEliminarPaciente = document.getElementById('btnEliminarPaciente');
+    if (btnEliminarPaciente) {
+        btnEliminarPaciente.style.display = appData.currentRole === 'admin' ? 'inline-block' : 'none';
+    }
+
     openModal('modalVerPaciente');
+}
+
+async function eliminarPacienteActual() {
+    if (!currentPacienteId) return;
+
+    const paciente = appData.pacientes.find(p => p.id === currentPacienteId);
+    if (!paciente) return;
+
+    const facturasAsociadas = appData.facturas.filter(f =>
+        (f.pacienteId && f.pacienteId === paciente.id) || f.paciente === paciente.nombre
+    );
+    const citasAsociadas = appData.citas.filter(c =>
+        (c.pacienteId && c.pacienteId === paciente.id) || c.paciente === paciente.nombre
+    );
+
+    let advertencias = '';
+    if (facturasAsociadas.length > 0) {
+        advertencias += `<div style="background: #fff3cd; padding: 10px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #ffc107;">
+            <div style="color: #856404; font-size: 13px;">
+                ⚠️ Tiene <strong>${facturasAsociadas.length} factura(s)</strong> asociada(s). Los registros de facturación se conservarán.
+            </div>
+        </div>`;
+    }
+    if (citasAsociadas.length > 0) {
+        advertencias += `<div style="background: #fff3cd; padding: 10px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #ffc107;">
+            <div style="color: #856404; font-size: 13px;">
+                ⚠️ Tiene <strong>${citasAsociadas.length} cita(s)</strong> asociada(s) que también serán eliminadas.
+            </div>
+        </div>`;
+    }
+
+    mostrarConfirmacion({
+        titulo: '🗑️ Eliminar Paciente',
+        mensaje: `
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                <div style="font-size: 18px; font-weight: 600; color: #002366; margin-bottom: 8px;">${paciente.nombre}</div>
+                <div style="font-size: 14px; color: #666;">${paciente.cedula ? `Cédula: ${paciente.cedula}` : ''}</div>
+                <div style="font-size: 14px; color: #666;">${paciente.telefono ? `Tel: ${paciente.telefono}` : ''}</div>
+            </div>
+            ${advertencias}
+            <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; color: #666; font-size: 13px; text-align: center;">
+                Esta acción no se puede deshacer
+            </div>
+        `,
+        tipo: 'peligro',
+        confirmText: 'Sí, Eliminar Paciente',
+        onConfirm: async () => {
+            registrarAuditoria('eliminar', 'paciente', `${paciente.nombre} - Cédula: ${paciente.cedula || 'N/A'}`);
+
+            appData.pacientes = appData.pacientes.filter(p => p.id !== paciente.id);
+            // Eliminar citas del paciente
+            appData.citas = appData.citas.filter(c =>
+                !(c.pacienteId === paciente.id || c.paciente === paciente.nombre)
+            );
+
+            await saveData();
+            closeModal('modalVerPaciente');
+            updatePacientesTab();
+            alert(`✅ Paciente "${paciente.nombre}" eliminado correctamente`);
+        }
+    });
 }
 
 function cambiarTabPaciente(tabName) {
