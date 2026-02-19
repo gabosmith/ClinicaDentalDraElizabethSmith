@@ -5766,9 +5766,18 @@ function mostrarConfirmacion(opciones) {
     openModal('modalConfirmacion');
 }
 
-function ejecutarConfirmacion() {
+async function ejecutarConfirmacion() {
     if (accionConfirmacion) {
-        accionConfirmacion();
+        const btn = document.getElementById('confirmacionBtnConfirmar');
+        if (btn) { btn.disabled = true; btn.textContent = '⏳ Procesando...'; }
+        try {
+            await accionConfirmacion();
+        } catch(e) {
+            console.error('Error en confirmación:', e);
+            alert('❌ Error al ejecutar la acción. Intenta de nuevo.');
+        } finally {
+            if (btn) btn.disabled = false;
+        }
     }
     cerrarConfirmacion();
 }
