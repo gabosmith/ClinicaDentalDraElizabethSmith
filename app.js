@@ -2554,18 +2554,49 @@ async function eliminarPacienteActual() {
         tipo: 'peligro',
         confirmText: 'Sí, Eliminar Paciente',
         onConfirm: async () => {
-            registrarAuditoria('eliminar', 'paciente', `${paciente.nombre} - Cédula: ${paciente.cedula || 'N/A'}`);
+            const idAEliminar = paciente.id;
+            const nombreAEliminar = paciente.nombre;
+            const cedulaAEliminar = paciente.cedula || 'N/A';
 
-            appData.pacientes = appData.pacientes.filter(p => p.id !== paciente.id);
-            // Eliminar citas del paciente
-            appData.citas = appData.citas.filter(c =>
-                !(c.pacienteId === paciente.id || c.paciente === paciente.nombre)
-            );
+            // Pausar listener para que no restaure el paciente eliminado
+            _listenerPausado = true;
 
-            await saveData({ deletePacienteId: paciente.id });
-            closeModal('modalVerPaciente');
-            updatePacientesTab();
-            alert(`✅ Paciente "${paciente.nombre}" eliminado correctamente`);
+            try {
+                // 1. Borrar el doc de Firestore PRIMERO
+                await db.collection('clinicaData-dev').doc('main')
+                    .collection('pacientes').doc(idAEliminar).delete();
+
+                // 2. Quitar de memoria
+                appData.pacientes = appData.pacientes.filter(p => p.id !== idAEliminar);
+                appData.citas = appData.citas.filter(c =>
+                    !(c.pacienteId === idAEliminar || c.paciente === nombreAEliminar)
+                );
+
+                // 3. Actualizar doc principal
+                await saveMainData();
+
+                // 4. Auditoría
+                appData.auditLogs = appData.auditLogs || [];
+                appData.auditLogs.push({
+                    id: generateId('LOG-'),
+                    fecha: new Date().toISOString(),
+                    usuario: appData.currentUser,
+                    accion: 'eliminar',
+                    tipo: 'paciente',
+                    detalles: `${nombreAEliminar} - Cédula: ${cedulaAEliminar}`
+                });
+
+                updateLocalCache();
+                closeModal('modalVerPaciente');
+                updatePacientesTab();
+                alert(`✅ Paciente "${nombreAEliminar}" eliminado correctamente`);
+
+            } catch(err) {
+                console.error('Error eliminando paciente:', err);
+                alert('❌ Error al eliminar. Intenta de nuevo.');
+            } finally {
+                _listenerPausado = false;
+            }
         }
     });
 }
