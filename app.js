@@ -2510,7 +2510,7 @@ function verPaciente(pacienteId) {
     // Mostrar/ocultar botón eliminar según rol
     const btnEliminarPaciente = document.getElementById('btnEliminarPaciente');
     if (btnEliminarPaciente) {
-        btnEliminarPaciente.style.display = appData.currentRole === 'admin' ? 'inline-block' : 'none';
+        btnEliminarPaciente.style.display = appData.currentRole === 'admin' ? 'flex' : 'none';
     }
 
     openModal('modalVerPaciente');
@@ -4001,45 +4001,52 @@ function abrirConsentimiento(pacienteId) {
     // Abrir modal primero
     openModal('modalConsentimiento');
 
-    // Inicializar canvas DESPUÉS de que el modal esté visible (importante para dimensiones correctas)
+    // Inicializar canvas DESPUÉS de que el modal esté visible
     setTimeout(() => {
         const canvas = document.getElementById('signatureCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Establecer dimensiones explícitas
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
+        // Dimensiones fijas y razonables (NO usar offsetWidth que puede ser enorme)
+        canvas.width = 500;
+        canvas.height = 200;
 
         // Limpiar canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.strokeStyle = '#000';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2.5;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
 
         let isDrawing = false;
         let lastX = 0;
         let lastY = 0;
 
-        // Event listeners para dibujar
+        function getPos(e, canvas) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            return {
+                x: (e.clientX - rect.left) * scaleX,
+                y: (e.clientY - rect.top) * scaleY
+            };
+        }
+
         canvas.onmousedown = (e) => {
             isDrawing = true;
-            const rect = canvas.getBoundingClientRect();
-            lastX = e.clientX - rect.left;
-            lastY = e.clientY - rect.top;
+            const pos = getPos(e, canvas);
+            lastX = pos.x;
+            lastY = pos.y;
         };
 
         canvas.onmousemove = (e) => {
             if (!isDrawing) return;
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-
+            const pos = getPos(e, canvas);
             ctx.beginPath();
             ctx.moveTo(lastX, lastY);
-            ctx.lineTo(x, y);
+            ctx.lineTo(pos.x, pos.y);
             ctx.stroke();
-
-            lastX = x;
-            lastY = y;
+            lastX = pos.x;
+            lastY = pos.y;
         };
 
         canvas.onmouseup = () => { isDrawing = false; };
@@ -4050,19 +4057,22 @@ function abrirConsentimiento(pacienteId) {
             e.preventDefault();
             isDrawing = true;
             const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
             const touch = e.touches[0];
-            lastX = touch.clientX - rect.left;
-            lastY = touch.clientY - rect.top;
+            lastX = (touch.clientX - rect.left) * scaleX;
+            lastY = (touch.clientY - rect.top) * scaleY;
         };
 
         canvas.ontouchmove = (e) => {
             e.preventDefault();
             if (!isDrawing) return;
             const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
             const touch = e.touches[0];
-            const x = touch.clientX - rect.left;
-            const y = touch.clientY - rect.top;
-
+            const x = (touch.clientX - rect.left) * scaleX;
+            const y = (touch.clientY - rect.top) * scaleY;
             ctx.beginPath();
             ctx.moveTo(lastX, lastY);
             ctx.lineTo(x, y);
@@ -4072,7 +4082,7 @@ function abrirConsentimiento(pacienteId) {
         };
 
         canvas.ontouchend = () => { isDrawing = false; };
-    }, 100); // 100ms para que el modal se renderice completamente
+    }, 150);
 }
 
 function limpiarFirma() {
@@ -4092,24 +4102,49 @@ async function guardarConsentimiento() {
     const hasSignature = imageData.data.some(channel => channel !== 0);
 
     if (!hasSignature) {
-        alert('Por favor firme el consentimiento');
+        alert('Por favor firme el consentimiento antes de guardar');
         return;
     }
 
-    // Guardar firma como base64
-    const firmaBase64 = canvas.toDataURL('image/png');
+    // Mostrar loading en el botón
+    const btnGuardar = document.querySelector('#modalConsentimiento .btn-submit');
+    if (btnGuardar) {
+        btnGuardar.textContent = '⏳ Guardando...';
+        btnGuardar.disabled = true;
+    }
 
-    currentPacienteConsentimiento.consentimiento = {
-        firmado: true,
-        fecha: new Date().toISOString(),
-        firmaBase64: firmaBase64
-    };
+    try {
+        // Usar JPEG con calidad 0.6 en lugar de PNG — MUCHO más pequeño y rápido
+        // Primero poner fondo blanco (JPEG no soporta transparencia)
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = canvas.width;
+        tempCanvas.height = canvas.height;
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCtx.fillStyle = '#ffffff';
+        tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+        tempCtx.drawImage(canvas, 0, 0);
 
-    await saveData();
-    closeModal('modalConsentimiento');
-    updatePacientesTab();
+        const firmaBase64 = tempCanvas.toDataURL('image/jpeg', 0.6);
 
-    alert('✅ Consentimiento informado guardado exitosamente');
+        currentPacienteConsentimiento.consentimiento = {
+            firmado: true,
+            fecha: new Date().toISOString(),
+            firmaBase64: firmaBase64
+        };
+
+        await saveData();
+        closeModal('modalConsentimiento');
+        updatePacientesTab();
+        alert('✅ Consentimiento informado guardado exitosamente');
+    } catch (error) {
+        console.error('Error guardando consentimiento:', error);
+        alert('❌ Error al guardar. Intenta de nuevo.');
+    } finally {
+        if (btnGuardar) {
+            btnGuardar.textContent = '✅ Guardar Consentimiento';
+            btnGuardar.disabled = false;
+        }
+    }
 }
 
 function verFirma(pacienteId) {
