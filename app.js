@@ -1,66 +1,4 @@
 // ========================================
-// MULTI-TENANT CONFIG
-// ========================================
-
-// CLINIC_PATH se setea al login según la clínica activa
-// Ejemplo: 'clinica-smith', 'clinica-garcia', etc.
-let CLINIC_PATH = null;
-let unsubscribeSnapshot = null;
-
-// Detectar clínica desde URL o localStorage
-function detectClinica() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlClinica = urlParams.get('clinica');
-    if (urlClinica) {
-        CLINIC_PATH = urlClinica;
-        localStorage.setItem('smile_clinica', urlClinica);
-        return urlClinica;
-    }
-    const saved = localStorage.getItem('smile_clinica');
-    if (saved) {
-        CLINIC_PATH = saved;
-        return saved;
-    }
-    return null;
-}
-
-// Inicializar listener en tiempo real para la clínica activa
-function initRealtimeListener() {
-    if (unsubscribeSnapshot) unsubscribeSnapshot();
-
-    unsubscribeSnapshot = db.collection('clinicas').doc(CLINIC_PATH).onSnapshot((doc) => {
-        if (doc.exists && !doc.metadata.hasPendingWrites) {
-            const data = doc.data();
-            appData.facturas = data.facturas || [];
-            appData.personal = data.personal || getDefaultPersonal();
-            appData.gastos = data.gastos || [];
-            appData.avances = data.avances || [];
-            appData.cuadresDiarios = data.cuadresDiarios || {};
-            appData.pacientes = data.pacientes || [];
-            appData.citas = data.citas || [];
-            appData.laboratorios = data.laboratorios || [];
-            appData.reversiones = data.reversiones || [];
-            appData.auditLogs = data.auditLogs || [];
-            updateLocalCache();
-            if (appData.currentUser) {
-                const activeTab = document.querySelector('.tab-content.active');
-                if (activeTab) {
-                    const tabId = activeTab.id.replace('tab-', '');
-                    if (tabId === 'ingresos') updateIngresosTab();
-                    if (tabId === 'cobrar') updateCobrarTab();
-                    if (tabId === 'cuadre') updateCuadreTab();
-                    if (tabId === 'gastos') updateGastosTab();
-                    if (tabId === 'personal') updatePersonalTab();
-                    if (tabId === 'laboratorio') updateLaboratorioTab();
-                    if (tabId === 'agenda') updateAgendaTab();
-                    if (tabId === 'pacientes') updatePacientesTab();
-                }
-            }
-        }
-    });
-}
-
-// ========================================
 // FIREBASE DATA MANAGEMENT
 // ========================================
 
@@ -92,7 +30,7 @@ async function loadData() {
         }
 
         console.log('☁️ Cargando desde Firebase...');
-        const doc = await db.collection('clinicas').doc(CLINIC_PATH).get();
+        const doc = await db.collection('clinicaData-dev').doc('main').get();
 
         if (doc.exists) {
             const data = doc.data();
@@ -109,7 +47,7 @@ async function loadData() {
             // Cargar pacientes desde subcollection si aplica
             if (data.usaSubcollectionPacientes) {
                 console.log('📂 Cargando pacientes desde subcollection...');
-                const pacientesSnapshot = await db.collection('clinicas').doc(CLINIC_PATH)
+                const pacientesSnapshot = await db.collection('clinicaData-dev').doc('main')
                     .collection('pacientes').get();
                 appData.pacientes = pacientesSnapshot.docs.map(doc => doc.data());
                 console.log(`✅ ${appData.pacientes.length} pacientes cargados desde subcollection`);
@@ -187,7 +125,7 @@ async function saveData() {
             console.log(`⚠️ Muchos pacientes (${appData.pacientes.length}). Usando subcollection...`);
 
             // Guardar datos principales SIN pacientes
-            await db.collection('clinicas').doc(CLINIC_PATH).set({
+            await db.collection('clinicaData-dev').doc('main').set({
                 facturas: appData.facturas,
                 personal: appData.personal,
                 gastos: appData.gastos,
@@ -213,7 +151,7 @@ async function saveData() {
                 const lote = appData.pacientes.slice(i, Math.min(i + BATCH_SIZE, appData.pacientes.length));
 
                 lote.forEach(paciente => {
-                    const docRef = db.collection('clinicas').doc(CLINIC_PATH)
+                    const docRef = db.collection('clinicaData-dev').doc('main')
                         .collection('pacientes').doc(paciente.id);
                     batch.set(docRef, paciente);
                 });
@@ -225,7 +163,7 @@ async function saveData() {
             console.log(`✅ Todos los pacientes guardados en subcollection`);
         } else {
             // Pocos pacientes, guardar normalmente
-            await db.collection('clinicas').doc(CLINIC_PATH).set({
+            await db.collection('clinicaData-dev').doc('main').set({
                 facturas: appData.facturas,
                 personal: appData.personal,
                 gastos: appData.gastos,
@@ -268,7 +206,64 @@ function getDefaultPersonal() {
     ];
 }
 
-// Real-time synchronization se inicializa en login() via initRealtimeListener()
+// Control del listener (para pausarlo durante importaciones masivas)
+let _listenerUnsubscribe = null;
+let _listenerPausado = false;
+
+function iniciarListenerTiempoReal() {
+    if (_listenerUnsubscribe) _listenerUnsubscribe();
+    _listenerUnsubscribe = db.collection('clinicaData-dev').doc('main').onSnapshot(async (doc) => {
+        if (_listenerPausado) return; // Ignorar si está pausado
+        if (doc.exists && !doc.metadata.hasPendingWrites) {
+            const data = doc.data();
+            appData.facturas = data.facturas || [];
+            appData.personal = data.personal || getDefaultPersonal();
+            appData.gastos = data.gastos || [];
+            appData.avances = data.avances || [];
+            appData.cuadresDiarios = data.cuadresDiarios || {};
+            appData.citas = data.citas || [];
+            appData.laboratorios = data.laboratorios || [];
+            appData.reversiones = data.reversiones || [];
+            appData.auditLogs = data.auditLogs || [];
+
+            // ✅ FIX: Leer pacientes desde subcollection si aplica
+            if (data.usaSubcollectionPacientes) {
+                try {
+                    const pacientesSnapshot = await db.collection('clinicaData-dev').doc('main')
+                        .collection('pacientes').get();
+                    appData.pacientes = pacientesSnapshot.docs.map(d => d.data());
+                    console.log(`✅ Listener: ${appData.pacientes.length} pacientes desde subcollection`);
+                } catch (e) {
+                    console.error('❌ Listener: Error cargando subcollection de pacientes', e);
+                }
+            } else {
+                appData.pacientes = data.pacientes || [];
+            }
+
+            // Actualizar caché cuando hay cambios
+            updateLocalCache();
+
+            // Refresh current view if user is logged in
+            if (appData.currentUser) {
+                const activeTab = document.querySelector('.tab-content.active');
+                if (activeTab) {
+                    const tabId = activeTab.id.replace('tab-', '');
+                    if (tabId === 'ingresos') updateIngresosTab();
+                    if (tabId === 'cobrar') updateCobrarTab();
+                    if (tabId === 'cuadre') updateCuadreTab();
+                    if (tabId === 'gastos') updateGastosTab();
+                    if (tabId === 'personal') updatePersonalTab();
+                    if (tabId === 'laboratorio') updateLaboratorioTab();
+                    if (tabId === 'agenda') updateAgendaTab();
+                    if (tabId === 'pacientes') updatePacientesTab();
+                }
+            }
+        }
+    });
+}
+
+// Iniciar listener inmediatamente
+iniciarListenerTiempoReal();
 
 // ========================================
 // INITIALIZE APP
@@ -276,19 +271,10 @@ function getDefaultPersonal() {
 
 // Wait for Firebase to be ready, then load data
 window.addEventListener('load', async function() {
-    // Detectar clínica activa (URL o localStorage)
-    const clinicaDetectada = detectClinica();
-
-    if (!clinicaDetectada) {
-        // Sin clínica detectada — mostrar pantalla de login de clínica
-        // Por ahora: fallback a clinica-smith para compatibilidad
-        CLINIC_PATH = 'clinica-smith';
-        console.log('⚠️ Clínica no detectada, usando clinica-smith como fallback');
-    }
-
-    console.log(`🏥 Clínica activa: ${CLINIC_PATH}`);
     await loadData();
     updateProfessionalPicker();
+
+    // Inicializar estados en citas existentes
     inicializarEstadosCitas();
 });
 
@@ -411,19 +397,12 @@ function login() {
     }
 
     appData.currentUser = username;
-    // Iniciar listener en tiempo real ahora que sabemos la clínica
-    initRealtimeListener();
     showApp();
 }
 
 // Logout
 function logout() {
     if (confirm('🚪 ¿Cerrar sesión?\n\nSe cerrará tu sesión actual.')) {
-        // Cancelar listener de Firebase
-        if (unsubscribeSnapshot) {
-            unsubscribeSnapshot();
-            unsubscribeSnapshot = null;
-        }
         appData.currentUser = null;
         appData.currentRole = null;
         document.getElementById('loginScreen').style.display = 'flex';
@@ -6236,6 +6215,9 @@ function ejecutarImportacion() {
         tipo: 'normal',
         confirmText: 'Sí, Importar Ahora',
         onConfirm: async () => {
+            // ✅ FIX: Pausar listener durante importación masiva para evitar errores 400
+            _listenerPausado = true;
+            console.log('⏸️ Listener pausado para importación masiva');
             console.log(`🚀 Iniciando importación de ${window.pacientesAImportar.length} pacientes...`);
 
             // Agregar pacientes
@@ -6247,9 +6229,19 @@ function ejecutarImportacion() {
             console.log(`✅ Pacientes agregados a appData correctamente`);
             console.log(`💾 Llamando a saveData()...`);
 
-            await saveData();
+            try {
+                await saveData();
+                console.log(`✅ saveData() completado`);
+            } catch (error) {
+                console.error('❌ Error guardando:', error);
+                _listenerPausado = false;
+                alert('❌ Error al guardar los pacientes. Por favor intenta de nuevo.');
+                return;
+            }
 
-            console.log(`✅ saveData() completado`);
+            // ✅ Reanudar listener después de guardar
+            _listenerPausado = false;
+            console.log('▶️ Listener reanudado');
             console.log(`🔄 Actualizando tab de pacientes...`);
 
             // Actualizar tab de pacientes para reflejar los nuevos
